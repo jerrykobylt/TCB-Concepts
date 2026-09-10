@@ -113,6 +113,17 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
 .msg.err{background:#FEE2E2;color:#991B1B}
 @media (prefers-color-scheme:dark){.msg{color:var(--green-lite)}.msg.err{background:#3b1111;color:#fca5a5}}
 
+.tally{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.tally .t{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper)}
+.tally .t b{font-family:var(--display);font-size:22px;display:block;line-height:1}
+.tally .t span{font-size:12px;color:var(--steel);text-transform:capitalize}
+.tally .t.worse b{color:var(--red)}.tally .t.better b{color:var(--green)}.tally .t.remarkable b{color:var(--amber)}
+.fb{border-left:3px solid var(--line);padding:8px 12px;margin-bottom:8px;font-size:13.5px}
+.fb.worse{border-color:var(--red)}.fb.better{border-color:var(--green)}.fb.remarkable{border-color:var(--amber)}
+.fb .m{color:var(--steel);font-size:12px;margin-bottom:3px;text-transform:capitalize}
+.fb .m b{text-transform:none}
+.fb p{margin:0;white-space:pre-wrap}
+@media (max-width:600px){.tally{grid-template-columns:1fr 1fr}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--night);color:#fff;padding:10px 16px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
 .toast.on{opacity:1}
 .savebar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 0 0;margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -278,6 +289,13 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
         <div class="field"><label for="pConcept">Concept URL</label><input type="url" id="pConcept" placeholder="https://tcb-concepts.vercel.app/concepts/…"></div>
         <div class="field"><label for="pSummary">Summary <small>one paragraph, appears at the top of the plan</small></label><textarea id="pSummary"></textarea></div>
 
+        <div id="fbBlock" hidden>
+          <h3 style="font-size:17px;margin:22px 0 4px">Visitor feedback</h3>
+          <p class="muted" style="margin:0 0 12px">From the poll on the concept page. Included in the printed plan.</p>
+          <div class="tally" id="fbTally"></div>
+          <div id="fbList"></div>
+        </div>
+
         <h3 style="font-size:17px;margin:22px 0 12px">Project plan</h3>
         <p class="muted" style="margin:0 0 12px">Markdown. Bullets, bold and short paragraphs. This becomes the printable proposal.</p>
 
@@ -351,7 +369,7 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     var box = $('authmsg');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { box.innerHTML = '<div class="msg err">That address does not look right.</div>'; return; }
     this.disabled = true;
-    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin/' } });
+    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin' } });
     this.disabled = false;
     box.innerHTML = r.error
       ? '<div class="msg err">' + esc(r.error.message) + '</div>'
@@ -525,14 +543,35 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     });
     $('pConcept').oninput = syncLinks; syncLinks();
     $('pMeta').textContent = p.id ? 'Updated ' + fmt(p.updated_at) : '';
+    loadFeedback(p.id ? p.slug : null);
     $('pDelete').hidden = !p.id;
     $('pdPlan').hidden = !p.id;
     if (!p.id) $('pName').focus();
   }
+  async function loadFeedback(slug) {
+    var block = $('fbBlock');
+    if (!slug) { block.hidden = true; return; }
+    var r = await sb.from('concept_feedback').select('*').eq('project_slug', slug).order('created_at', { ascending: false });
+    if (r.error) { block.hidden = true; return; }
+    var rows = r.data || [];
+    block.hidden = false;
+    var counts = { worse: 0, same: 0, better: 0, remarkable: 0 };
+    rows.forEach(function (x) { if (counts[x.rating] != null) counts[x.rating]++; });
+    $('fbTally').innerHTML = Object.keys(counts).map(function (k) {
+      return '<div class="t ' + k + '"><b>' + counts[k] + '</b><span>' + k + '</span></div>';
+    }).join('');
+    var withText = rows.filter(function (x) { return x.feedback; });
+    $('fbList').innerHTML = rows.length === 0
+      ? '<p class="muted">No responses yet.</p>'
+      : (withText.length === 0 ? '<p class="muted">' + rows.length + ' rating' + (rows.length === 1 ? '' : 's') + ', no written comments yet.</p>' : withText.map(function (x) {
+          return '<div class="fb ' + esc(x.rating) + '"><div class="m">' + esc(x.rating) + ' · <b>' + esc(fmt(x.created_at)) + '</b></div><p>' + esc(x.feedback) + '</p></div>';
+        }).join(''));
+  }
+
   function syncLinks() {
     var c = $('pConcept').value.trim();
     $('pdConcept').hidden = !c; $('pdConcept').href = c || '#';
-    $('pdPlan').href = '/admin/plan.html?slug=' + encodeURIComponent($('pSlug').value.trim());
+    $('pdPlan').href = '/admin/plan?slug=' + encodeURIComponent($('pSlug').value.trim());
   }
   $('pName').addEventListener('input', function () { if (!state.proj.id && !$('pSlug').dataset.touched) $('pSlug').value = slugify(this.value); });
   $('pSlug').addEventListener('input', function () { this.dataset.touched = '1'; syncLinks(); });

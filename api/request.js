@@ -247,7 +247,7 @@ module.exports = async function handler(req, res) {
   });
   if (!ack.ok) console.error('[concepts] confirmation failed:', ack.error);
 
-  if (row.ok && row.id) noteDelivery(row.id, notify.id, ack.ok);
+  if (row.ok) noteDelivery(notify.id, ack.ok);
 
   return res.status(200).json({ ok: true, id: notify.id, confirmed: ack.ok, archived: row.ok });
 };
@@ -276,7 +276,7 @@ async function archiveRequest(f) {
         apikey: sb.key,
         Authorization: `Bearer ${sb.key}`,
         'Content-Type': 'application/json',
-        Prefer: 'return=representation',
+        Prefer: 'return=minimal',
       },
       body: JSON.stringify({
         org: f.org, kind: f.kind, name: f.name, email: f.email,
@@ -287,8 +287,8 @@ async function archiveRequest(f) {
       console.error('[concepts] archive failed:', res.status, await res.text().catch(() => ''));
       return { ok: false };
     }
-    const data = await res.json().catch(() => []);
-    return { ok: true, id: Array.isArray(data) && data[0] ? data[0].id : null };
+    // return=minimal: the insert-only policy has no SELECT, so no row comes back.
+    return { ok: true, id: null };
   } catch (err) {
     console.error('[concepts] archive error:', err && err.message);
     return { ok: false };
@@ -297,6 +297,6 @@ async function archiveRequest(f) {
 
 // The publishable key may insert but never update, so delivery details are
 // logged rather than written back. The archive holds the request itself.
-function noteDelivery(id, resendId, confirmed) {
-  console.log('[concepts] archived', id, 'resend', resendId, 'confirmed', confirmed);
+function noteDelivery(resendId, confirmed) {
+  console.log('[concepts] archived; resend', resendId, 'confirmed', confirmed);
 }
