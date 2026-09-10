@@ -1,0 +1,15 @@
+# Vercel
+.vercel
+
+# Windows / macOS system files
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# Editor
+.idea/
+*.swp
+
+# Local scratch
+Troubleshoot/
+node_modules/
