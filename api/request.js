@@ -131,7 +131,7 @@ function internalEmail(f, meta) {
   </div>
 </div></body></html>`;
 
-  return { subject: `Concept request: ${f.org}`, text, html };
+  return { subject: `Tri-Cities Board Concepts: request from ${f.org}`, text, html };
 }
 
 function confirmationEmail(f) {
@@ -185,7 +185,7 @@ https://www.tricitiesboard.org`;
   </div>
 </div></body></html>`;
 
-  return { subject: `We got your request, ${f.org}`, text, html };
+  return { subject: `Tri-Cities Board Concepts: we got your request, ${f.org}`, text, html };
 }
 
 module.exports = async function handler(req, res) {
