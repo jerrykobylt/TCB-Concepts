@@ -39,14 +39,12 @@ module.exports = async function handler(req, res) {
   const slug = segs[0];
   if (!/^[a-z0-9-]{2,80}$/.test(slug)) return res.status(404).send('Not found');
 
-  // Directory-style URLs get index.html. A bare /concepts/<slug> is
-  // redirected to the trailing-slash form so relative assets resolve.
-  if (segs.length === 1) {
-    res.setHeader('Location', `/concepts/${slug}/`);
-    return res.status(308).end();
-  }
-  if (p.endsWith('/') || segs.length === 2 && segs[1] === '') p = `${slug}/index.html`;
-  if (!/\.[a-z0-9]+$/i.test(p)) p = p.replace(/\/?$/, '/index.html');
+  // vercel.json strips trailing slashes, so /concepts/<slug> is the canonical
+  // page URL. Serve index.html for it and for any extensionless path, and
+  // inject a <base> so the page's relative assets still resolve under the slug.
+  let injectBase = false;
+  if (segs.length === 1) { p = `${slug}/index.html`; injectBase = true; }
+  else if (!/\.[a-z0-9]+$/i.test(p)) { p = p.replace(/\/?$/, '/index.html'); injectBase = true; }
 
   const url = `${base.replace(/\/$/, '')}/storage/v1/object/public/concepts/${p.split('/').map(encodeURIComponent).join('/')}`;
   let up;
@@ -62,6 +60,11 @@ module.exports = async function handler(req, res) {
 
   if (ext === 'html' || ext === 'htm') {
     let html = await up.text();
+    if (injectBase && !/<base\s/i.test(html)) {
+      const dir = p.split('/').slice(0, -1).map(encodeURIComponent).join('/');
+      const baseTag = `<base href="/concepts/${dir}/">`;
+      html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + baseTag) : baseTag + html;
+    }
     if (!/tcb-bar\.js/.test(html)) {
       const title = (html.match(/<title>([^<]*)<\/title>/i) || [, slug])[1].trim().split(/\s[—|–-]\s/)[0];
       const tag = `<script src="/tcb-bar.js" data-concept="${escapeAttr(title)}" data-slug="${slug}" defer></script>`;
