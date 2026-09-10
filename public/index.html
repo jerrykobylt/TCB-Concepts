@@ -115,6 +115,7 @@ section.tint{background:var(--tint);border-top:1px solid var(--line);border-bott
 /* ---------- projects ---------- */
 .projects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
 .proj.feat{grid-column:span 2}
+.projects.many .proj.feat{grid-column:auto}
 .proj.feat .crest{height:168px;font-size:26px}
 .proj.feat .crest small{font-size:11.5px}
 .proj.feat .in p{max-width:62ch;font-size:15.4px}
@@ -346,34 +347,24 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
         </p>
       </div>
 
-      <div class="projects">
-
-        <a class="proj feat" href="/concepts/poco-pirates/">
-          <div class="crest pirates">
+      <div class="projects" id="projects">
+        <!-- Cards are rendered from /api/listings. The Pirates card below is the
+             no-JavaScript fallback and is replaced once listings load. -->
+        <a class="proj feat" href="/concepts/poco-pirates/" data-static>
+          <div class="crest" style="background:linear-gradient(140deg,#2A1145 0%,#52247F 100%);color:#FFC629">
             <small>Est. 1974</small>
             Port Coquitlam<br>Minor Hockey
           </div>
           <div class="in">
             <div class="kind">Sports association</div>
             <h3>PoCo Pirates</h3>
-            <p>
-              Fifty years of hockey, buried in a site parents could not book from. Registration
-              moved to the front, public game schedules, division pages, Pirates Cup and the gear shop.
-            </p>
-            <div class="chips">
-              <span class="chip">Registration</span>
-              <span class="chip">Schedules</span>
-              <span class="chip">Divisions</span>
-              <span class="chip">Shop</span>
-            </div>
-            <div class="foot">
-              <span class="open">Open the concept <span class="arw" aria-hidden="true">&rarr;</span></span>
-              <span class="state live">Live</span>
-            </div>
+            <p>Fifty years of hockey, buried in a site parents could not book from. Registration moved to the front, public game schedules, division pages, Pirates Cup and the gear shop.</p>
+            <div class="chips"><span class="chip">Registration</span><span class="chip">Schedules</span><span class="chip">Divisions</span><span class="chip">Shop</span></div>
+            <div class="foot"><span class="open">Open the concept <span class="arw" aria-hidden="true">&rarr;</span></span><span class="state live">Live</span></div>
           </div>
         </a>
 
-        <div class="proj">
+        <div class="proj" id="openSlot">
           <div class="crest pending">
             <small>Open slot</small>
             Your organization<br>could be here
@@ -742,6 +733,52 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+(function () {
+  // Live listings: every listed project, plus any folder dropped into the concepts bucket.
+  var grid = document.getElementById('projects');
+  var slot = document.getElementById('openSlot');
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function stateOf(it) {
+    if (it.status === 'live' || it.status === 'handed_over' || it.status === 'managed') return ['live', 'Launched'];
+    if (it.live) return ['live', 'Live'];
+    if (it.status === 'building' || it.status === 'prospect') return ['build', 'Building'];
+    return ['build', 'In progress'];
+  }
+  function card(it, featured) {
+    var st = stateOf(it);
+    var crest = it.bg
+      ? '<div class="crest" style="background:' + esc(it.bg) + ';color:' + esc(it.fg || '#fff') + '">'
+      : '<div class="crest pending">';
+    var title = esc(it.org || it.name).replace(/ (Minor|Chamber|Network|Association|Society|Club|of) /, ' $1<br>');
+    var inner = crest + (it.label ? '<small>' + esc(it.label) + '</small>' : '') + title + '</div>' +
+      '<div class="in">' +
+        '<div class="kind">' + esc(it.kind || 'Organization') + '</div>' +
+        '<h3>' + esc(it.name) + '</h3>' +
+        (it.summary ? '<p>' + esc(it.summary) + '</p>' : '') +
+        (it.tags && it.tags.length ? '<div class="chips">' + it.tags.map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
+        '<div class="foot">' +
+          (it.url ? '<span class="open">Open the concept <span class="arw" aria-hidden="true">&rarr;</span></span>' : '<span class="open" style="color:var(--steel)">Not published yet</span>') +
+          '<span class="state ' + st[0] + '">' + st[1] + '</span>' +
+        '</div>' +
+      '</div>';
+    var el = document.createElement(it.url ? 'a' : 'div');
+    el.className = 'proj' + (featured ? ' feat' : '');
+    if (it.url) el.href = it.url;
+    el.innerHTML = inner;
+    return el;
+  }
+  fetch('/api/listings').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !d.ok || !Array.isArray(d.items) || !d.items.length) return;
+    grid.querySelectorAll('[data-static]').forEach(function (n) { n.remove(); });
+    var frag = document.createDocumentFragment();
+    // With few cards, feature the first so the row fills; with many, a plain grid.
+    var feature = d.items.length <= 2;
+    d.items.forEach(function (it, i) { frag.appendChild(card(it, feature && i === 0)); });
+    grid.insertBefore(frag, slot);
+    if (d.items.length >= 3) grid.classList.add('many');
+  }).catch(function () {});
+})();
 
 (function () {
   var btn = document.getElementById('totop');

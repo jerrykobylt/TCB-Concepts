@@ -124,6 +124,16 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
 .fb .m b{text-transform:none}
 .fb p{margin:0;white-space:pre-wrap}
 @media (max-width:600px){.tally{grid-template-columns:1fr 1fr}}
+.chk{display:flex;align-items:center;gap:8px;font-family:var(--body);font-weight:500;font-size:14px;margin:0 0 6px}
+.chk input{accent-color:var(--green);width:16px;height:16px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:20px;text-align:center;background:var(--paper);transition:border-color .15s,background .15s;margin-bottom:10px}
+.drop.over{border-color:var(--green);background:var(--green-wash)}
+.drop a{font-weight:600}
+.files{width:100%;border-collapse:collapse;font-size:13px}
+.files td{padding:6px 8px;border-bottom:1px solid var(--line)}
+.files td:last-child{text-align:right;white-space:nowrap}
+.files .rm{background:none;border:0;color:var(--red);cursor:pointer;font-size:12.5px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--night);color:#fff;padding:10px 16px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
 .toast.on{opacity:1}
 .savebar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 0 0;margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -316,6 +326,45 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
         </div>
         <div class="field"><label for="pConcept">Concept URL</label><input type="url" id="pConcept" placeholder="https://www.tcbconcepts.org/concepts/…"></div>
         <div class="field"><label for="pSummary">Summary <small>one paragraph, appears at the top of the plan</small></label><textarea id="pSummary"></textarea></div>
+
+        <h3 style="font-size:17px;margin:22px 0 4px">Listing card</h3>
+        <p class="muted" style="margin:0 0 12px">How it appears under "The work" on the landing page.</p>
+        <div class="grid3">
+          <div class="field"><label for="pLabel">Crest line <small>e.g. Est. 1974</small></label><input type="text" id="pLabel"></div>
+          <div class="field"><label for="pBg">Crest background <small>CSS colour or gradient</small></label><input type="text" id="pBg" placeholder="linear-gradient(140deg,#2A1145,#52247F)"></div>
+          <div class="field"><label for="pFg">Crest text colour</label><input type="text" id="pFg" placeholder="#FFC629"></div>
+        </div>
+        <div class="grid3">
+          <div class="field" style="grid-column:span 2"><label for="pTags">Tags <small>comma separated</small></label><input type="text" id="pTags" placeholder="Registration, Schedules, Shop"></div>
+          <div class="field"><label for="pSort">Order <small>lower first</small></label><input type="text" id="pSort" inputmode="numeric" placeholder="100"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="pListed"> Show on the landing page</label>
+
+        <div id="filesBlock" hidden>
+          <h3 style="font-size:17px;margin:22px 0 4px">Concept files</h3>
+          <p class="muted" style="margin:0 0 10px">Drop the concept's files here, or a whole folder. <b>index.html</b> becomes the concept page at <span id="filesUrl" class="mono"></span>. You can also drop files straight into the <b>concepts</b> bucket in Supabase under this slug.</p>
+          <div class="drop" id="drop">
+            <input type="file" id="fileIn" multiple hidden>
+            <input type="file" id="dirIn" webkitdirectory directory multiple hidden>
+            <div>Drag files or a folder here, or <a href="#" id="pickFiles">choose files</a> · <a href="#" id="pickDir">choose a folder</a></div>
+            <div class="muted" id="dropMsg"></div>
+          </div>
+          <div id="fileList"></div>
+        </div>
+
+        <div id="pitchBlock" hidden>
+          <h3 style="font-size:17px;margin:22px 0 4px">The pitch</h3>
+          <p class="muted" style="margin:0 0 10px">The proposal we hand to the organization. Write it with AI from everything above, then edit. Prints at <a id="pitchLink" href="#" target="_blank" rel="noopener">the pitch page</a>.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+            <button class="btn sm" id="aiPitch" type="button">Write the pitch with AI</button>
+            <button class="btn ghost sm" id="aiPlan" type="button">Draft empty plan sections with AI</button>
+            <span class="muted" id="aiMsg"></span>
+          </div>
+          <div class="sec" data-key="pitch">
+            <div class="sh"><span class="n">P</span><h3>Pitch</h3><span class="hint" id="pitchMeta">markdown</span><button class="tg" type="button">Preview</button></div>
+            <div class="body"><textarea class="plan" id="pPitch" style="min-height:260px"></textarea><div class="md" hidden></div></div>
+          </div>
+        </div>
 
         <div id="fbBlock" hidden>
           <h3 style="font-size:17px;margin:22px 0 4px">Visitor feedback</h3>
@@ -614,6 +663,15 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     $('pContact').value = p.contact_name || ''; $('pEmail').value = p.contact_email || '';
     $('pCurrent').value = p.current_url || ''; $('pConcept').value = p.concept_url || '';
     $('pSummary').value = p.summary || '';
+    $('pLabel').value = p.card_label || ''; $('pBg').value = p.card_bg || ''; $('pFg').value = p.card_fg || '';
+    $('pTags').value = (p.tags || []).join(', '); $('pSort').value = p.sort == null ? '' : p.sort;
+    $('pListed').checked = p.listed !== false;
+    $('pPitch').value = p.pitch || '';
+    $('pitchMeta').textContent = p.pitch_updated_at ? 'updated ' + fmt(p.pitch_updated_at) : 'markdown';
+    $('aiMsg').textContent = '';
+    $('filesBlock').hidden = !p.id; $('pitchBlock').hidden = !p.id;
+    if (p.id) { $('filesUrl').textContent = C.site + '/concepts/' + p.slug + '/'; $('pitchLink').href = '/admin/plan?slug=' + encodeURIComponent(p.slug) + '&doc=pitch'; loadFiles(p.slug); }
+    var psec = document.querySelector('.sec[data-key="pitch"]'); psec.querySelector('.md').hidden = true; psec.querySelector('textarea').hidden = false; psec.querySelector('.tg').textContent = 'Preview';
     PLAN_KEYS.forEach(function (k) {
       var sec = document.querySelector('.sec[data-key="' + k + '"]');
       sec.querySelector('textarea').value = (p.plan && p.plan[k]) || '';
@@ -672,7 +730,15 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
       contact_name: $('pContact').value.trim() || null, contact_email: $('pEmail').value.trim() || null,
       current_url: $('pCurrent').value.trim() || null, concept_url: $('pConcept').value.trim() || null,
       summary: $('pSummary').value.trim() || null,
+      card_label: $('pLabel').value.trim() || null, card_bg: $('pBg').value.trim() || null, card_fg: $('pFg').value.trim() || null,
+      tags: $('pTags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean),
+      sort: parseInt($('pSort').value, 10) || 100,
+      listed: $('pListed').checked,
     };
+    if (p.id) {
+      var newPitch = $('pPitch').value.trim() || null;
+      if (newPitch !== (p.pitch || null)) { row.pitch = newPitch; row.pitch_updated_at = newPitch ? new Date().toISOString() : null; }
+    }
     if (!row.name) { toast('Give it a name first'); $('pName').focus(); return; }
     var plan = {};
     PLAN_KEYS.forEach(function (k) { plan[k] = document.querySelector('.sec[data-key="' + k + '"] textarea').value.trim() || null; });
@@ -689,6 +755,125 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     await loadProjects();
     openProject(state.projects.find(function (x) { return x.id === r.data.id; }));
     toast('Saved');
+  });
+
+  /* ---------------- concept files ---------------- */
+  var BUCKET = 'concepts';
+  async function loadFiles(slug) {
+    var box = $('fileList'); box.innerHTML = '<p class="muted">Loading…</p>';
+    var all = [];
+    async function walk(prefix) {
+      var r = await sb.storage.from(BUCKET).list(prefix, { limit: 500, sortBy: { column: 'name', order: 'asc' } });
+      if (r.error) return;
+      for (var i = 0; i < r.data.length; i++) {
+        var e = r.data[i], path = prefix ? prefix + '/' + e.name : e.name;
+        if (e.id) all.push({ path: path, size: (e.metadata && e.metadata.size) || 0 });
+        else await walk(path);
+      }
+    }
+    await walk(slug);
+    if (!all.length) { box.innerHTML = '<p class="muted">No files yet.</p>'; return; }
+    box.innerHTML = '<table class="files">' + all.map(function (f) {
+      var rel = f.path.slice(slug.length + 1);
+      return '<tr><td><span class="mono">' + esc(rel) + '</span>' + (rel === 'index.html' ? ' <span class="pill live">page</span>' : '') + '</td><td>' + (f.size ? Math.round(f.size / 1024) + ' KB' : '') + '</td><td><button class="rm" data-path="' + esc(f.path) + '">Remove</button></td></tr>';
+    }).join('') + '</table>';
+    var hasIndex = all.some(function (f) { return f.path === slug + '/index.html'; });
+    if (hasIndex && !$('pConcept').value.trim()) { $('pConcept').value = C.site + '/concepts/' + slug + '/'; syncLinks(); }
+  }
+  $('fileList').addEventListener('click', async function (e) {
+    var b = e.target.closest('.rm'); if (!b) return;
+    if (!confirm('Remove ' + b.dataset.path.split('/').slice(1).join('/') + '?')) return;
+    var r = await sb.storage.from(BUCKET).remove([b.dataset.path]);
+    if (r.error) { toast('Remove failed: ' + r.error.message, 4000); return; }
+    loadFiles(state.proj.slug);
+  });
+  function guessType(name) {
+    var ext = (name.split('.').pop() || '').toLowerCase();
+    return { html: 'text/html', htm: 'text/html', css: 'text/css', js: 'text/javascript', json: 'application/json', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', ico: 'image/x-icon', woff: 'font/woff', woff2: 'font/woff2', pdf: 'application/pdf', mp4: 'video/mp4', txt: 'text/plain' }[ext] || 'application/octet-stream';
+  }
+  async function uploadFiles(files) {
+    var p = state.proj; if (!p || !p.id) { toast('Save the project first'); return; }
+    var list = Array.prototype.slice.call(files).filter(function (f) { return f.size > 0; });
+    if (!list.length) return;
+    var msg = $('dropMsg'); var done = 0, failed = 0;
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      // A picked folder carries "folder/sub/file"; strip the top folder so index.html lands at the root.
+      var rel = f._rel || f.webkitRelativePath || f.name;
+      if (!f._rel && f.webkitRelativePath && rel.indexOf('/') > -1) rel = rel.split('/').slice(1).join('/');
+      msg.textContent = 'Uploading ' + (i + 1) + ' of ' + list.length + ': ' + rel;
+      var r = await sb.storage.from(BUCKET).upload(p.slug + '/' + rel, f, { upsert: true, contentType: guessType(f.name), cacheControl: '60' });
+      if (r.error) { failed++; console.error(r.error); } else done++;
+    }
+    msg.textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.';
+    loadFiles(p.slug);
+  }
+  $('pickFiles').addEventListener('click', function (e) { e.preventDefault(); $('fileIn').click(); });
+  $('pickDir').addEventListener('click', function (e) { e.preventDefault(); $('dirIn').click(); });
+  $('fileIn').addEventListener('change', function () { uploadFiles(this.files); this.value = ''; });
+  $('dirIn').addEventListener('change', function () { uploadFiles(this.files); this.value = ''; });
+  (function () {
+    var d = $('drop');
+    ['dragenter', 'dragover'].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.remove('over'); }); });
+    d.addEventListener('drop', async function (e) {
+      var items = e.dataTransfer.items;
+      if (items && items.length && items[0].webkitGetAsEntry) {
+        var out = [];
+        async function read(entry, prefix) {
+          if (entry.isFile) {
+            var file = await new Promise(function (res, rej) { entry.file(res, rej); });
+            file._rel = prefix + entry.name; out.push(file);
+          } else if (entry.isDirectory) {
+            var reader = entry.createReader(); var batch;
+            do {
+              batch = await new Promise(function (res, rej) { reader.readEntries(res, rej); });
+              for (var i = 0; i < batch.length; i++) await read(batch[i], prefix + entry.name + '/');
+            } while (batch.length);
+          }
+        }
+        var entries = []; for (var i = 0; i < items.length; i++) { var en = items[i].webkitGetAsEntry(); if (en) entries.push(en); }
+        var single = entries.length === 1 && entries[0].isDirectory;
+        for (var j = 0; j < entries.length; j++) await read(entries[j], '');
+        if (single) out.forEach(function (f) { f._rel = f._rel.split('/').slice(1).join('/'); });
+        uploadFiles(out);
+      } else {
+        uploadFiles(e.dataTransfer.files);
+      }
+    });
+  })();
+
+  /* ---------------- AI ---------------- */
+  async function callAI(mode) {
+    var p = state.proj; if (!p || !p.id) return null;
+    var s = await sb.auth.getSession(); var token = s.data.session && s.data.session.access_token;
+    if (!token) { toast('Sign in again'); return null; }
+    var r = await fetch('/api/pitch', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ slug: p.slug, mode: mode }) });
+    var data = await r.json().catch(function () { return {}; });
+    if (!r.ok || !data.ok) { toast(data.error || data.reason || 'AI request failed', 5000); return null; }
+    return data;
+  }
+  $('aiPitch').addEventListener('click', async function () {
+    if ($('pPitch').value.trim() && !confirm('Replace the current pitch text with a fresh AI draft? Unsaved edits will be lost.')) return;
+    this.disabled = true; $('aiMsg').textContent = 'Writing… this takes about twenty seconds.';
+    var d = await callAI('pitch'); this.disabled = false;
+    if (!d) { $('aiMsg').textContent = ''; return; }
+    $('pPitch').value = d.pitch; $('aiMsg').textContent = 'Draft ready (' + d.model + '). Read it, edit it, then Save project.';
+    var psec = document.querySelector('.sec[data-key="pitch"]'); psec.querySelector('.md').hidden = true; psec.querySelector('textarea').hidden = false; psec.querySelector('.tg').textContent = 'Preview';
+    $('pPitch').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+  $('aiPlan').addEventListener('click', async function () {
+    var empty = PLAN_KEYS.filter(function (k) { return !document.querySelector('.sec[data-key="' + k + '"] textarea').value.trim(); });
+    if (!empty.length) { toast('Every plan section already has text'); return; }
+    this.disabled = true; $('aiMsg').textContent = 'Drafting ' + empty.length + ' section' + (empty.length > 1 ? 's' : '') + '…';
+    var d = await callAI('plan'); this.disabled = false;
+    if (!d) { $('aiMsg').textContent = ''; return; }
+    var n = 0;
+    Object.keys(d.sections || {}).forEach(function (k) {
+      var ta = document.querySelector('.sec[data-key="' + k + '"] textarea');
+      if (ta && !ta.value.trim()) { ta.value = d.sections[k]; n++; }
+    });
+    $('aiMsg').textContent = n ? n + ' section' + (n > 1 ? 's' : '') + ' drafted. Read them, then Save project.' : (d.note || 'Nothing to fill.');
   });
 
   $('pDelete').addEventListener('click', async function () {

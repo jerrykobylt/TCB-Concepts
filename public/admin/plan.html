@@ -32,6 +32,10 @@ a{color:var(--green)}
 .md p{margin:0 0 10px}.md ul,.md ol{margin:0 0 10px;padding-left:22px}.md li{margin-bottom:6px}.md strong{font-weight:600}
 .md h1,.md h2,.md h3{font-size:15px;margin:12px 0 6px;border:0;padding:0;display:block}
 .empty{color:var(--steel);font-style:italic}
+.md.pitch h1{font-size:24px;margin:0 0 6px}
+.md.pitch h2{font-size:19px;margin:22px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--green);display:inline-block}
+.md.pitch h3{font-size:15.5px;margin:14px 0 6px}
+.md.pitch p{margin:0 0 10px}.md.pitch ul,.md.pitch ol{margin:0 0 10px;padding-left:22px}.md.pitch li{margin-bottom:6px}
 .tally{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 16px}
 .tally .t{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .tally .t b{font-family:Outfit,system-ui,sans-serif;font-size:26px;display:block;line-height:1}
@@ -114,6 +118,20 @@ a{color:var(--green)}
   if (r.error || !r.data) { st.textContent = 'Could not load that project.'; return; }
   var p = r.data, plan = (Array.isArray(p.project_plans) ? p.project_plans[0] : p.project_plans) || {};
 
+  var doc = new URLSearchParams(location.search).get('doc');
+  if (doc === 'pitch') {
+    document.title = p.org_name + ' — Website proposal';
+    document.querySelector('.hd .eyebrow').textContent = 'Tri-Cities Board Concepts · Proposal';
+    $('title').textContent = p.org_name;
+    $('summary').textContent = 'Website proposal';
+    document.querySelector('.meta').hidden = true;
+    document.querySelector('.body').innerHTML = p.pitch
+      ? '<div class="md pitch">' + marked.parse(p.pitch, { breaks: true }) + '</div>'
+      : '<p class="empty">No pitch written yet. Open the project in admin and use "Write the pitch with AI".</p>';
+    $('updated').textContent = p.pitch_updated_at ? 'Written ' + new Date(p.pitch_updated_at).toLocaleDateString('en-CA', { dateStyle: 'long' }) : '';
+    st.hidden = true; $('page').hidden = false;
+    return;
+  }
   document.title = p.name + ' — Project plan';
   $('title').textContent = p.name;
   $('summary').textContent = p.summary || '';
