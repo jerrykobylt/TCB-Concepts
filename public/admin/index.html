@@ -118,6 +118,19 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
 .md h1,.md h2,.md h3{font-size:15px;margin:12px 0 6px}
 
 /* sign in */
+.login{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:600px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.login-art{position:relative;background:var(--night);color:#fff;min-height:320px}
+.login-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%}
+.login-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(17,24,39,.15) 0%,rgba(17,24,39,.35) 45%,rgba(17,24,39,.9) 100%)}
+.login-quote{position:absolute;left:0;right:0;bottom:0;padding:36px 40px;z-index:1}
+.login-quote blockquote{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(28px,3.2vw,44px);line-height:1.08;letter-spacing:-.02em;max-width:14ch}
+.login-quote cite{display:block;font-style:normal;margin-top:14px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--green-lite);font-weight:600}
+.login-form{display:flex;align-items:center;justify-content:center;padding:48px 40px}
+.login-in{width:100%;max-width:420px}
+.login-in h1{font-size:30px;margin-bottom:6px}
+.login-in > p{color:var(--steel);margin:0 0 22px}
+.login .btn.lg{width:100%;padding:13px 20px;font-size:16px;margin-top:4px}
+@media (max-width:900px){.login{grid-template-columns:1fr;min-height:0}.login-art{min-height:260px}.login-form{padding:28px 20px}}
 .auth{margin:0}
 .auth .auth-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:40px;align-items:start}
 .auth .auth-in > div:first-child{padding-top:4px}
@@ -179,34 +192,37 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
 <div class="wrap">
 
   <!-- SIGN IN -->
-  <div class="auth card" id="auth"><div class="auth-in">
-    <div>
-      <h1>Sign in</h1>
-      <p>Tri-Cities Board team only. Email and password for everyday use. A one-time link if it is your first time or you have forgotten your password.</p>
+  <div class="login" id="auth">
+    <div class="login-art">
+      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&h=1400&q=70" alt="" decoding="async">
+      <div class="login-quote">
+        <blockquote>Local is the whole advantage.</blockquote>
+        <cite>Tri-Cities Board</cite>
+      </div>
     </div>
-    <div>
-    <div class="field">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="admin@tricitiesboard.org" autocomplete="username">
+    <div class="login-form">
+      <div class="login-in">
+        <h1>Sign in</h1>
+        <p>Concepts admin. Tri-Cities Board team only.</p>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="admin@tricitiesboard.org" autocomplete="username">
+        </div>
+        <div class="field" id="pwField">
+          <label for="password">Password</label>
+          <div class="pw"><input type="password" id="password" autocomplete="current-password"><button type="button" class="eye" aria-label="Show password" aria-pressed="false" data-for="password"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="on" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle class="on" cx="12" cy="12" r="3"/><path class="off" d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.9M6.3 6.3C3.6 8.3 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.1-.9"/></svg></button></div>
+        </div>
+        <button class="btn lg" id="signin">Sign in</button>
+        <div id="authmsg"></div>
+      </div>
     </div>
-    <div class="field" id="pwField">
-      <label for="password">Password</label>
-      <div class="pw"><input type="password" id="password" autocomplete="current-password"><button type="button" class="eye" aria-label="Show password" aria-pressed="false" data-for="password"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="on" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle class="on" cx="12" cy="12" r="3"/><path class="off" d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.9M6.3 6.3C3.6 8.3 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.1-.9"/></svg></button></div>
-    </div>
-    <button class="btn" id="signin">Sign in</button>
-    <p class="muted" style="margin:16px 0 0">
-      First time here, or forgot your password?
-      <a href="#" id="uselink">Email me a one-time link</a>. You can set a password once you are in.
-    </p>
-    <div id="authmsg"></div>
-    </div>
-  </div></div>
+  </div>
 
   <!-- SET PASSWORD (after first magic-link sign-in, or on request) -->
   <div class="auth card" id="setpw" hidden><div class="auth-in">
     <div>
       <h1 id="setpwTitle">Set your password</h1>
-      <p>From now on you sign in with <b id="setpwEmail"></b> and this password. A one-time link still works if you ever forget it.</p>
+      <p>From now on you sign in with <b id="setpwEmail"></b> and this password.</p>
     </div>
     <div>
     <div class="field">
@@ -473,24 +489,14 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
   $('signin').addEventListener('click', async function () {
     var email = $('email').value.trim(), pw = $('password').value;
     if (!validEmail(email)) { msg('authmsg', 'That address does not look right.', true); return; }
-    if (!pw) { msg('authmsg', 'Enter your password, or use the one-time link below.', true); return; }
+    if (!pw) { msg('authmsg', 'Enter your password.', true); return; }
     this.disabled = true; msg('authmsg', '');
     var r = await sb.auth.signInWithPassword({ email: email, password: pw });
     this.disabled = false;
-    if (r.error) msg('authmsg', /invalid/i.test(r.error.message) ? 'Wrong email or password. If you have not set a password yet, use the one-time link.' : r.error.message, true);
+    if (r.error) msg('authmsg', /invalid/i.test(r.error.message) ? 'Wrong email or password.' : r.error.message, true);
   });
   $('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('signin').click(); });
   $('email').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('password').focus(); });
-
-  // One-time link: first sign-in, or forgotten password.
-  $('uselink').addEventListener('click', async function (e) {
-    e.preventDefault();
-    var email = $('email').value.trim();
-    if (!validEmail(email)) { msg('authmsg', 'Enter your email first.', true); $('email').focus(); return; }
-    msg('authmsg', '');
-    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin' } });
-    msg('authmsg', r.error ? r.error.message : 'Link sent to ' + email + '. Open it on this device, then set your password.', !!r.error);
-  });
 
   // Set or change password. Shown automatically after a link sign-in until
   // a password exists; reachable any time from the header.
