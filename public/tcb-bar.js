@@ -30,7 +30,7 @@
       'font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13.5px;line-height:1;',
       'border-bottom:1px solid rgba(255,255,255,.1);box-shadow:0 1px 0 rgba(74,222,128,.35)}',
     '.tcb-bar *,.tcb-poll *{box-sizing:border-box}',
-    '.tcb-bar .in{max-width:1368px;margin:0 auto;padding:0 20px;height:48px;display:flex;align-items:center;gap:14px}',
+    '.tcb-bar .in{max-width:1368px;margin:0 auto;padding:0 24px;height:48px;display:flex;align-items:center;gap:14px}',
     '.tcb-bar a{color:inherit;text-decoration:none}',
     '.tcb-bar .brand{display:flex;align-items:center;gap:9px;min-width:0;flex:0 1 auto}',
     '.tcb-bar .brand svg{width:26px;height:26px;flex:0 0 auto;display:block}',
