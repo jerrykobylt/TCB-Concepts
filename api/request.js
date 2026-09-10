@@ -6,7 +6,7 @@
  * a person, and Reply-To points at the human inbox that owns the reply.
  *
  * Env (set in Vercel, copied from the tri-cities-board project):
- *   RESEND_API_KEY
+ *   TCB_RESEND_KEY          (or RESEND_API_KEY)
  *   EMAIL_FROM              e.g. "Tri-Cities Board <noreply@tricitiesboard.org>"
  *   EMAIL_REPLY_TO_ADMIN    admin@tricitiesboard.org
  *   EMAIL_REPLY_TO_OUTREACH outreach@tricitiesboard.org
@@ -16,6 +16,22 @@ const FROM_DEFAULT = 'Tri-Cities Board <noreply@tricitiesboard.org>';
 const ADMIN_DEFAULT = 'admin@tricitiesboard.org';
 const OUTREACH_DEFAULT = 'outreach@tricitiesboard.org';
 const SITE = 'https://tcb-concepts.vercel.app';
+
+/**
+ * Read an env var, ignoring the "[SENSITIVE]" placeholder that `vercel env
+ * pull` writes for values it is not allowed to read. A variable copied from
+ * that output would otherwise override a perfectly good default with junk.
+ */
+function env(name) {
+  const v = process.env[name];
+  if (!v || v.trim() === '' || v.trim() === '[SENSITIVE]') return undefined;
+  return v.trim();
+}
+
+/** The Resend key lives under TCB_RESEND_KEY on this project; RESEND_API_KEY is the main site's name. */
+function resendKey() {
+  return env('TCB_RESEND_KEY') || env('RESEND_API_KEY');
+}
 
 const KINDS = new Set([
   'Non-profit, club or team',
@@ -64,7 +80,7 @@ async function sendViaResend({ to, from, subject, html, text, replyTo }) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${resendKey()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -194,13 +210,13 @@ module.exports = async function handler(req, res) {
   const { fields, errors, ok } = validate(body);
   if (!ok) return res.status(400).json({ ok: false, errors });
 
-  if (!process.env.RESEND_API_KEY) {
+  if (!resendKey()) {
     return res.status(503).json({ ok: false, reason: 'not_configured' });
   }
 
-  const from = process.env.EMAIL_FROM || FROM_DEFAULT;
-  const admin = process.env.EMAIL_REPLY_TO_ADMIN || ADMIN_DEFAULT;
-  const outreach = process.env.EMAIL_REPLY_TO_OUTREACH || OUTREACH_DEFAULT;
+  const from = env('EMAIL_FROM') || FROM_DEFAULT;
+  const admin = env('EMAIL_REPLY_TO_ADMIN') || ADMIN_DEFAULT;
+  const outreach = env('EMAIL_REPLY_TO_OUTREACH') || OUTREACH_DEFAULT;
   const when = new Date().toLocaleString('en-CA', { timeZone: 'America/Vancouver', dateStyle: 'medium', timeStyle: 'short' }) + ' PT';
 
   const internal = internalEmail(fields, { when });
