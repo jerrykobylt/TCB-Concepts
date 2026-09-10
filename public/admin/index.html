@@ -194,9 +194,9 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
   <!-- SIGN IN -->
   <div class="login" id="auth">
     <div class="login-art">
-      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&h=1400&q=70" alt="" decoding="async">
+      <img id="loginImg" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&h=1400&q=70" alt="" decoding="async">
       <div class="login-quote">
-        <blockquote>Local is the whole advantage.</blockquote>
+        <blockquote id="loginQuote">Local is the whole advantage.</blockquote>
         <cite>Tri-Cities Board</cite>
       </div>
     </div>
@@ -480,6 +480,35 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function slugify(s) { return String(s).toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
   function md(s) { return s ? marked.parse(s, { breaks: true }) : '<p class="muted">Nothing written yet.</p>'; }
+
+  /* ---------------- daily sign-in image ---------------- */
+  // One picture and one line per day, chosen by the day of the year so it
+  // changes at midnight and stays the same all day. Lines are the Board's own.
+  (function () {
+    var days = [
+      ['1506905925346-21bda4d32df4', 'Local is the whole advantage.'],
+      ['1501785888041-af3ef285b470', 'Three cities, five communities, one board.'],
+      ['1441974231531-c6227db76b6e', 'We build first and talk after.'],
+      ['1470071459604-3b5ec3a7fe05', 'Real pages, not slide decks.'],
+      ['1447752875215-b2761acb3c5d', 'Come see what your neighbours are up to.'],
+      ['1433086966358-54859d0ed716', 'We would rather collaborate than invoice.'],
+      ['1500530855697-b586d89ba3ee', 'Free to browse, free to join, and built here.'],
+      ['1469474968028-56623f02e42e', 'We made anonymity expensive.'],
+      ['1426604966848-d7adac402bff', 'Put it in one place and keep it independent.'],
+      ['1454496522488-7a8e488e8606', 'A national platform cannot check a Coquitlam licence.'],
+      ['1418065460487-3e41a6c84dc5', 'Send attention back to the people who make things happen here.'],
+      ['1519681393784-d120267933ba', 'We choose the projects, and we say no often.'],
+      ['1464822759023-fed622ff2c3b', 'One independent site covering three cities.'],
+      ['1483728642387-6c3bdd6c93e5', 'It is a trade, not a favour.']
+    ];
+    var now = new Date();
+    var start = new Date(now.getFullYear(), 0, 0);
+    var day = Math.floor((now - start) / 86400000);
+    var pick = days[day % days.length];
+    var img = document.getElementById('loginImg'), q = document.getElementById('loginQuote');
+    if (img) img.src = 'https://images.unsplash.com/photo-' + pick[0] + '?auto=format&fit=crop&w=1200&h=1400&q=70';
+    if (q) q.textContent = pick[1];
+  })();
 
   /* ---------------- auth ---------------- */
   function msg(id, text, bad) { $(id).innerHTML = text ? '<div class="msg' + (bad ? ' err' : '') + '">' + esc(text) + '</div>' : ''; }
