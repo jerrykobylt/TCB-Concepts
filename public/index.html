@@ -203,6 +203,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3
 .err{color:#DC2626;font-size:13px;font-weight:500;min-height:0}
 .field.bad input,.field.bad select,.field.bad textarea{border-color:#DC2626}
 form .btn{width:100%;margin-top:6px}
+.hp{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden}
 .fineprint{font-size:12.8px;color:var(--steel);margin:14px 0 0;text-align:center;line-height:1.5}
 
 .sent{display:none;text-align:center;padding:22px 6px 10px}
@@ -572,6 +573,10 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
         <form id="ask" novalidate>
           <div class="fbody">
+            <div class="hp" aria-hidden="true">
+              <label for="company">Company</label>
+              <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
+            </div>
             <div class="fgrid">
               <div class="field wide">
                 <label for="org">Organization<span class="req">*</span></label>
@@ -638,7 +643,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
             <button class="btn lg" type="submit">Send it to the Board <span class="arw" aria-hidden="true">&rarr;</span></button>
             <p class="fineprint">
-              Goes to admin@tricitiesboard.org. We do not add you to a list or pass this on.
+              Goes to the team at outreach@tricitiesboard.org. We do not add you to a list or pass this on.
             </p>
           </div>
 
@@ -787,22 +792,67 @@ document.getElementById('yr').textContent = new Date().getFullYear();
 
     lastBody = body;
 
-    var href = 'mailto:admin@tricitiesboard.org' +
-      '?subject=' + encodeURIComponent('Concept request: ' + val('org')) +
-      '&body=' + encodeURIComponent(body);
+    var submitBtn = form.querySelector('button[type=submit]');
+    var submitLabel = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
 
-    form.classList.add('done');
-    sent.classList.add('on');
-    sent.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    function showSent(msg, showCopy) {
+      sentmsg.textContent = msg;
+      copybtn.parentNode.style.display = showCopy ? '' : 'none';
+      form.classList.add('done');
+      sent.classList.add('on');
+      sent.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
 
-    window.location.href = href;
+    function restore() {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = submitLabel;
+    }
+
+    // Last resort when the mail function is unreachable: hand it to their mail client.
+    function fallbackMail() {
+      var href = 'mailto:outreach@tricitiesboard.org' +
+        '?subject=' + encodeURIComponent('Concept request: ' + val('org')) +
+        '&body=' + encodeURIComponent(body);
+      showSent('Our mail service did not answer, so we opened your email app with everything filled in. Hit send and it lands with us.', true);
+      window.location.href = href;
+    }
+
+    var payload = {
+      org: val('org'), kind: val('kind'), name: val('name'), email: email,
+      site: site, problem: problem, track: track.value,
+      company: (form.querySelector('[name="company"]') || {}).value || ''
+    };
+
+    fetch('/api/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (r.ok && data.ok) {
+          showSent('It is with the team now. You will get a copy at ' + email +
+            ' in the next minute, and a real person will reply from outreach@tricitiesboard.org.', false);
+          return;
+        }
+        if (r.status === 400 && data.errors) {
+          Object.keys(data.errors).forEach(function (k) { setErr(k, data.errors[k]); });
+          restore();
+          return;
+        }
+        fallbackMail();
+      });
+    }).catch(function () {
+      fallbackMail();
+    });
   });
 
   copybtn.addEventListener('click', function () {
     var text = 'To: admin@tricitiesboard.org\n\n' + lastBody;
     function done() {
       copybtn.textContent = 'Copied';
-      sentmsg.textContent = 'Copied. Paste it into an email to admin@tricitiesboard.org and we will pick it up.';
+      sentmsg.textContent = 'Copied. Paste it into an email to outreach@tricitiesboard.org and we will pick it up.';
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done, fallback);
@@ -817,7 +867,7 @@ document.getElementById('yr').textContent = new Date().getFullYear();
       document.body.appendChild(ta);
       ta.select();
       try { document.execCommand('copy'); done(); }
-      catch (err) { sentmsg.textContent = 'Email admin@tricitiesboard.org and we will pick it up.'; }
+      catch (err) { sentmsg.textContent = 'Email outreach@tricitiesboard.org and we will pick it up.'; }
       document.body.removeChild(ta);
     }
   });
