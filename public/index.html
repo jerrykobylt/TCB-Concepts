@@ -3,329 +3,844 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TCB Concepts — Website rebuild concepts by Tri-Cities Board</title>
-<meta name="description" content="Live, working website concepts built by Tri-Cities Board for local organizations, businesses and partners. Not mockups — real pages you can click through.">
+<title>Concepts — Tri-Cities Board</title>
+<meta name="description" content="Tri-Cities Board rebuilds websites for the organizations, businesses and creatives who make things happen in Port Coquitlam, Port Moody and Coquitlam. Usually a collaboration, sometimes paid, only when it fits.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/tcb-logo.png">
-<meta property="og:title" content="TCB Concepts — Website rebuild concepts">
-<meta property="og:description" content="Live, working website concepts built by Tri-Cities Board for local organizations and businesses.">
+<meta property="og:title" content="Concepts — Tri-Cities Board">
+<meta property="og:description" content="We build the website your organization keeps putting off.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --green:#16A34A; --green-dark:#15803D; --green-light:#DCFCE7;
+  /* Tri-Cities Board palette */
+  --green:#16A34A; --green-dark:#15803D; --green-lite:#4ADE80; --green-wash:#DCFCE7;
   --sky:#0EA5E9; --amber:#F59E0B;
-  --ink:#111827; --ink-2:#1F2937; --steel:#6B7280;
-  --paper:#F9FAFB; --card:#FFFFFF; --line:#E5E7EB;
-  --shell:1120px;
-  --display:"Outfit",system-ui,-apple-system,Segoe UI,sans-serif;
-  --text:"Inter",system-ui,-apple-system,Segoe UI,sans-serif;
-  --shadow:0 1px 2px rgba(17,24,39,.06),0 8px 24px rgba(17,24,39,.07);
+  --night:#111827; --night-2:#1F2937; --night-3:#0B1220;
+  --ink:#111827; --steel:#6B7280;
+  --paper:#FFFFFF; --paper-2:#F9FAFB; --card:#FFFFFF; --line:#E5E7EB;
+  --shell:1140px;
+  --display:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --shadow-sm:0 1px 2px rgba(17,24,39,.06);
+  --shadow:0 1px 3px rgba(17,24,39,.07),0 10px 30px rgba(17,24,39,.08);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0B1120; --card:#151E2E; --ink:#F3F4F6; --ink-2:#E5E7EB;
-  --steel:#9CA3AF; --line:#2A3547; --green-light:#0E2C1C;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  --ink:#F3F4F6; --steel:#9CA3AF;
+  --paper:#0F1623; --paper-2:#0B1220; --card:#182233; --line:#26303F;
+  --green-wash:#0C2A1A;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5);
+  --shadow:0 1px 3px rgba(0,0,0,.5),0 12px 34px rgba(0,0,0,.42);
 }}
 :root[data-theme="dark"]{
-  --paper:#0B1120; --card:#151E2E; --ink:#F3F4F6; --ink-2:#E5E7EB;
-  --steel:#9CA3AF; --line:#2A3547; --green-light:#0E2C1C;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  --ink:#F3F4F6; --steel:#9CA3AF;
+  --paper:#0F1623; --paper-2:#0B1220; --card:#182233; --line:#26303F;
+  --green-wash:#0C2A1A;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5);
+  --shadow:0 1px 3px rgba(0,0,0,.5),0 12px 34px rgba(0,0,0,.42);
 }
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--text);font-size:16px;line-height:1.6}
-img{max-width:100%;display:block}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img,svg{display:block;max-width:100%}
 a{color:inherit}
-.shell{max-width:var(--shell);margin:0 auto;padding:0 22px}
-h1,h2,h3{font-family:var(--display);margin:0;line-height:1.08;letter-spacing:-.02em}
+.shell{max-width:var(--shell);margin:0 auto;padding:0 24px}
+h1,h2,h3,h4{font-family:var(--display);margin:0;line-height:1.1;letter-spacing:-.021em;font-weight:700}
+p{margin:0 0 15px}
 .skip{position:absolute;left:-9999px}
-.skip:focus{left:10px;top:10px;z-index:200;background:var(--green);color:#fff;padding:10px 14px;border-radius:8px}
+.skip:focus{left:12px;top:12px;z-index:300;background:var(--green);color:#fff;padding:11px 16px;border-radius:8px}
+:focus-visible{outline:2.5px solid var(--sky);outline-offset:3px;border-radius:4px}
 
-/* header */
-header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.bar{display:flex;align-items:center;gap:14px;height:66px}
-.brand{display:flex;align-items:center;gap:11px;text-decoration:none;min-width:0;flex:0 1 auto}
-.brand img{width:36px;height:36px;border-radius:8px;object-fit:cover;flex:0 0 auto}
-.brand .wordmark{display:block;min-width:0}
-.brand b{font-family:var(--display);font-size:17px;font-weight:700;display:block;letter-spacing:-.01em;white-space:nowrap}
-.brand .sub{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--green);font-weight:600;margin-top:1px;white-space:nowrap}
-.bar nav{margin-left:auto;display:flex;align-items:center;gap:6px;flex:0 0 auto}
-.bar nav a{font-size:14.5px;font-weight:500;text-decoration:none;color:var(--steel);padding:8px 12px;border-radius:8px}
-.bar nav a:hover{color:var(--ink);background:var(--line)}
-.bar nav a.btn{color:#fff;background:var(--green)}
-.bar nav a.btn:hover{color:#fff;background:var(--green-dark)}
+/* ---------- eyebrow ---------- */
+.eyebrow{font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--green);margin:0 0 14px}
+.on-dark .eyebrow{color:var(--green-lite)}
 
-.btn{font-family:var(--display);font-weight:600;font-size:15px;border:0;cursor:pointer;background:var(--green);color:#fff;padding:11px 20px;border-radius:9px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
+/* ---------- buttons ---------- */
+.btn{font-family:var(--display);font-weight:600;font-size:15.5px;border:0;cursor:pointer;background:var(--green);color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;white-space:nowrap;transition:background .15s,transform .15s}
 .btn:hover{background:var(--green-dark)}
+.btn:active{transform:translateY(1px)}
+.btn .arw{transition:transform .15s}
+.btn:hover .arw{transform:translateX(3px)}
+.btn.sm{font-size:14.5px;padding:9px 16px;border-radius:9px}
+.btn.lg{font-size:17px;padding:15px 28px}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-.btn.ghost:hover{background:var(--line)}
-.btn.sm{font-size:14px;padding:9px 15px}
+.btn.ghost:hover{background:var(--paper-2);border-color:var(--steel)}
+.on-dark .btn.ghost{color:#fff;border-color:rgba(255,255,255,.26);background:rgba(255,255,255,.05)}
+.on-dark .btn.ghost:hover{background:rgba(255,255,255,.12)}
 
-/* hero */
-.hero{padding:74px 0 56px;position:relative;overflow:hidden}
-.hero::before{content:"";position:absolute;inset:-40% 30% 40% -20%;background:radial-gradient(closest-side,rgba(22,163,74,.13),transparent);pointer-events:none}
-.hero .shell{position:relative}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green-dark);background:var(--green-light);border-radius:999px;padding:6px 14px;margin-bottom:22px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .eyebrow{color:#4ADE80}}
-h1{font-size:clamp(38px,6vw,62px);font-weight:800;max-width:16ch}
-.lede{font-size:clamp(17px,2.2vw,20px);color:var(--steel);max-width:62ch;margin:20px 0 0}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+/* ---------- header ---------- */
+header.site{position:sticky;top:0;z-index:100;background:rgba(17,24,39,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.bar{display:flex;align-items:center;gap:16px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;flex:0 1 auto;min-width:0}
+.brand svg{width:34px;height:34px;flex:0 0 auto}
+.brand .wm{min-width:0}
+.brand .wm b{display:block;font-family:var(--display);font-size:16.5px;font-weight:700;line-height:1.05;white-space:nowrap;letter-spacing:-.015em}
+.brand .wm i{display:block;font-style:normal;font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--green-lite);margin-top:2px;white-space:nowrap}
+.bar nav{margin-left:auto;display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.bar nav a{font-size:14.5px;font-weight:500;text-decoration:none;color:#D1D5DB;padding:8px 12px;border-radius:8px;white-space:nowrap}
+.bar nav a:hover{color:#fff;background:rgba(255,255,255,.09)}
+.bar nav a.btn{color:#fff;background:var(--green)}
+.bar nav a.btn:hover{background:var(--green-dark)}
 
-/* stats */
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-top:54px;padding-top:34px;border-top:1px solid var(--line)}
-.fact b{font-family:var(--display);font-size:26px;font-weight:700;display:block}
-.fact span{font-size:13.5px;color:var(--steel)}
+/* ---------- hero ---------- */
+.hero{background:var(--night);color:#fff;position:relative;overflow:hidden;padding:86px 0 78px}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(900px 420px at 12% -8%,rgba(22,163,74,.30),transparent 62%),
+  radial-gradient(760px 420px at 92% 8%,rgba(14,165,233,.20),transparent 60%);
+  pointer-events:none}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,222,128,.45),transparent)}
+.hero .shell{position:relative;z-index:1}
+.hero h1{font-size:clamp(36px,5.6vw,60px);font-weight:800;max-width:17ch;color:#fff}
+.hero .lede{font-size:clamp(17px,2vw,20px);color:#C7D0DC;max-width:60ch;margin:22px 0 0;line-height:1.55}
+.hero .lede b{color:#fff;font-weight:600}
+.hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.pillrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:40px;padding-top:30px;border-top:1px solid rgba(255,255,255,.13)}
+.pillrow span{font-size:13px;font-weight:500;color:#9CA3AF;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 14px}
 
-/* section */
-section{padding:60px 0}
-.head{margin-bottom:30px}
-.head h2{font-size:clamp(26px,3.6vw,36px);font-weight:700}
-.head p{color:var(--steel);margin:10px 0 0;max-width:58ch}
+/* ---------- section shell ---------- */
+section{padding:74px 0}
+section.tint{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.head{max-width:62ch;margin-bottom:38px}
+.head h2{font-size:clamp(27px,3.7vw,40px)}
+.head p{color:var(--steel);font-size:17px;margin:14px 0 0}
 
-/* concept cards */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
-.card:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(17,24,39,.07),0 16px 40px rgba(17,24,39,.12)}
-.swatch{height:112px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.01em;text-align:center;padding:0 20px}
-.swatch.pirates{background:linear-gradient(135deg,#2A1145,#52247F);color:#FFC629}
-.swatch.soon{background:repeating-linear-gradient(135deg,var(--line),var(--line) 11px,transparent 11px,transparent 22px);color:var(--steel);font-size:16px;font-weight:600}
-.card .body{padding:20px 21px 22px;display:flex;flex-direction:column;flex:1}
-.tag{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--steel)}
-.card h3{font-size:20px;font-weight:700;margin:7px 0 9px}
-.card p{color:var(--steel);font-size:14.8px;margin:0 0 18px}
-.pills{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
-.pill{font-size:12px;font-weight:500;color:var(--steel);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
-.card .foot{margin-top:auto;display:flex;align-items:center;gap:10px}
-.status{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--green);display:inline-flex;align-items:center;gap:6px}
-.status::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
-.status.draft{color:var(--amber)}
-.status.draft::before{background:var(--amber)}
+/* ---------- projects ---------- */
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:22px}
+.proj{background:var(--card);border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;text-decoration:none;transition:transform .2s,box-shadow .2s,border-color .2s}
+a.proj:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:transparent}
+.crest{height:126px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:0 22px;font-family:var(--display);font-weight:800;font-size:20px;line-height:1.13;letter-spacing:-.015em}
+.crest.pirates{background:linear-gradient(140deg,#2A1145 0%,#52247F 100%);color:#FFC629}
+.crest.pending{background:var(--paper-2);color:var(--steel);font-size:16.5px;font-weight:600;border-bottom:1px dashed var(--line);
+  background-image:repeating-linear-gradient(135deg,transparent,transparent 9px,rgba(107,114,128,.09) 9px,rgba(107,114,128,.09) 18px)}
+.crest small{font-family:var(--body);font-size:10.5px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;opacity:.72}
+.proj .in{padding:19px 20px 21px;display:flex;flex-direction:column;flex:1}
+.kind{font-size:11.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--steel)}
+.proj h3{font-size:19.5px;margin:8px 0 9px}
+.proj .in p{color:var(--steel);font-size:14.8px;margin:0 0 17px;line-height:1.55}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.chip{font-size:11.8px;font-weight:500;color:var(--steel);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.foot{margin-top:auto;display:flex;align-items:center;gap:10px}
+.open{font-family:var(--display);font-weight:600;font-size:14.8px;color:var(--green);display:inline-flex;align-items:center;gap:6px}
+a.proj:hover .open .arw{transform:translateX(4px)}
+.open .arw{transition:transform .15s}
+.state{margin-left:auto;font-size:12.4px;font-weight:600;color:var(--steel);display:inline-flex;align-items:center;gap:6px}
+.state::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.state.live{color:var(--green)}
+.state.build{color:var(--amber)}
 
-/* process */
-.alt{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:26px}
-.step .n{font-family:var(--display);font-weight:700;font-size:14px;width:32px;height:32px;border-radius:9px;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;margin-bottom:13px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .step .n{color:#4ADE80}}
-.step h3{font-size:17px;font-weight:600;margin-bottom:7px}
-.step p{color:var(--steel);font-size:14.8px;margin:0}
+/* ---------- steps ---------- */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:28px}
+.step{position:relative}
+.step .n{font-family:var(--display);font-weight:700;font-size:14.5px;width:34px;height:34px;border-radius:10px;background:var(--green-wash);color:var(--green-dark);display:flex;align-items:center;justify-content:center;margin-bottom:15px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .step .n{color:var(--green-lite)}}
+:root[data-theme="dark"] .step .n{color:var(--green-lite)}
+.step h3{font-size:17.5px;font-weight:600;margin-bottom:8px}
+.step p{color:var(--steel);font-size:14.9px;margin:0;line-height:1.58}
 
-/* contact */
-.panel{background:var(--ink);color:#F9FAFB;border-radius:16px;padding:44px 40px;display:flex;flex-wrap:wrap;gap:26px;align-items:center}
-.panel h2{font-size:clamp(24px,3.2vw,32px);font-weight:700;color:#fff}
-.panel p{color:#9CA3AF;margin:11px 0 0;max-width:46ch}
-.panel .cta{margin:0 0 0 auto}
-.panel .btn.ghost{color:#fff;border-color:#374151}
-.panel .btn.ghost:hover{background:#1F2937}
+/* ---------- criteria ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.checks li{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+.checks li:last-child{border-bottom:0}
+.checks .mk{flex:0 0 auto;width:21px;height:21px;border-radius:50%;background:var(--green-wash);display:flex;align-items:center;justify-content:center;margin-top:2px}
+.checks .mk svg{width:12px;height:12px;stroke:var(--green);stroke-width:3;fill:none}
+.checks b{font-family:var(--display);font-size:16px;font-weight:600;display:block;margin-bottom:2px}
+.checks span{color:var(--steel);font-size:14.6px;line-height:1.5}
+.noteblock{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:12px;padding:24px 24px 10px}
+.noteblock h3{font-size:18px;margin-bottom:10px}
+.noteblock p{color:var(--steel);font-size:14.9px}
 
-footer{padding:34px 0 46px;color:var(--steel);font-size:13.5px}
-.frow{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
-footer a{color:var(--steel)}
-.frow .right{margin-left:auto}
+/* ---------- tracks ---------- */
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.track{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:28px 26px;display:flex;flex-direction:column;position:relative}
+.track.pref{border-color:var(--green);box-shadow:0 0 0 3px var(--green-wash)}
+.flag{position:absolute;top:-11px;left:26px;background:var(--green);color:#fff;font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;padding:4px 12px;border-radius:999px}
+.track h3{font-size:22px;margin:6px 0 6px}
+.price{font-family:var(--display);font-size:15px;font-weight:600;color:var(--green);margin-bottom:15px}
+.track.alt .price{color:var(--steel)}
+.track>p{color:var(--steel);font-size:15px}
+.track ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.track ul li{position:relative;padding-left:24px;font-size:14.7px;color:var(--steel);line-height:1.5}
+.track ul li::before{content:"";position:absolute;left:0;top:7px;width:11px;height:11px;border-radius:50%;border:2px solid var(--green);opacity:.55}
+.track.alt ul li::before{border-color:var(--steel)}
 
+/* ---------- form ---------- */
+.formwrap{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:52px;align-items:start}
+.formside h2{font-size:clamp(26px,3.3vw,36px)}
+.formside p{color:var(--steel);margin-top:14px}
+.reassure{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:12px}
+.reassure li{display:flex;gap:11px;font-size:14.6px;color:var(--steel);line-height:1.5}
+.reassure .dot{flex:0 0 auto;width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:8px}
+
+form{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 26px;box-shadow:var(--shadow)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.field.wide{grid-column:1 / -1}
+label{font-family:var(--display);font-size:14px;font-weight:600}
+label .req{color:var(--green);margin-left:2px}
+label .opt{color:var(--steel);font-weight:500;font-size:12.5px;margin-left:5px}
+input[type=text],input[type=email],input[type=url],select,textarea{
+  font-family:var(--body);font-size:15px;color:var(--ink);background:var(--paper-2);
+  border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;width:100%;transition:border-color .15s,background .15s}
+textarea{resize:vertical;min-height:104px;line-height:1.55}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);background:var(--paper-2)}
+input::placeholder,textarea::placeholder{color:var(--steel);opacity:.7}
+select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:38px}
+.radios{display:grid;gap:8px}
+.radio{display:flex;align-items:flex-start;gap:11px;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--paper-2);transition:border-color .15s,background .15s}
+.radio:hover{border-color:var(--steel)}
+.radio input{margin:2px 0 0;accent-color:var(--green);flex:0 0 auto}
+.radio:has(input:checked){border-color:var(--green);background:var(--green-wash)}
+.radio b{font-family:var(--display);font-size:14.6px;font-weight:600;display:block}
+.radio span{font-size:13.4px;color:var(--steel);display:block;margin-top:1px;line-height:1.45}
+.err{color:#DC2626;font-size:13px;font-weight:500;min-height:0}
+.field.bad input,.field.bad select,.field.bad textarea{border-color:#DC2626}
+form .btn{width:100%;margin-top:6px}
+.fineprint{font-size:12.8px;color:var(--steel);margin:14px 0 0;text-align:center;line-height:1.5}
+
+.sent{display:none;text-align:center;padding:22px 6px 10px}
+.sent.on{display:block}
+form.done .fbody{display:none}
+.sent .tick{width:54px;height:54px;border-radius:50%;background:var(--green-wash);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.sent .tick svg{width:26px;height:26px;stroke:var(--green);stroke-width:3;fill:none}
+.sent h3{font-size:21px;margin-bottom:10px}
+.sent p{color:var(--steel);font-size:14.8px;max-width:40ch;margin-left:auto;margin-right:auto}
+.sent .btn.ghost{width:auto;margin-top:8px}
+
+/* ---------- closing ---------- */
+.closing{background:var(--night);color:#fff;padding:70px 0}
+.closing h2{font-size:clamp(26px,3.6vw,38px);color:#fff;max-width:20ch}
+.closing p{color:#9CA3AF;max-width:56ch;margin-top:16px;font-size:17px}
+.closing .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+
+footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1px solid rgba(255,255,255,.08)}
+.frow{display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:13.6px}
+.frow .brand{color:#fff}
+.frow nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:20px}
+.frow a{text-decoration:none}
+.frow a:hover{color:#fff}
+.fnote{margin:22px 0 0;font-size:12.8px;color:#6B7280;max-width:74ch;line-height:1.55}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .split,.formwrap{grid-template-columns:1fr;gap:38px}
+}
 @media (max-width:820px){
-  .bar nav a.hide-sm{display:none}
+  .bar nav a.hide-md{display:none}
 }
 @media (max-width:640px){
-  .shell{padding:0 16px}
-  .bar{height:58px;gap:10px}
-  .brand img{width:31px;height:31px}
-  .brand b{font-size:15px}
-  .brand .sub{font-size:9.5px;letter-spacing:.13em}
+  .shell{padding:0 17px}
+  .bar{height:56px;gap:10px}
+  .brand svg{width:30px;height:30px}
+  .brand .wm b{font-size:15px}
   .bar nav{gap:2px}
-  .bar nav a{padding:7px 9px;font-size:14px}
-  .btn.sm{padding:8px 13px;font-size:13.5px}
-  .hero{padding:44px 0 38px}
-  .lede{font-size:16.5px}
-  .facts{gap:22px;margin-top:40px}
-  section{padding:46px 0}
-  .panel{padding:30px 22px}
-  .panel .cta{margin:2px 0 0}
-  .panel .btn{flex:1 1 auto;justify-content:center}
+  .btn.sm{padding:8px 13px;font-size:13.8px}
+  .hero{padding:58px 0 52px}
+  .hero .lede{font-size:16.6px}
+  section{padding:52px 0}
+  .closing{padding:52px 0}
+  .head{margin-bottom:28px}
+  .fgrid{grid-template-columns:1fr}
+  form{padding:22px 18px}
+  .frow nav{margin-left:0;gap:16px}
+  .hero .cta .btn,.closing .cta .btn{flex:1 1 auto}
 }
-@media (max-width:400px){
+@media (max-width:380px){
   .bar nav a:not(.btn){display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
 }
 </style>
 </head>
 <body>
-<a class="skip" href="#concepts">Skip to concepts</a>
+<a class="skip" href="#work">Skip to the work</a>
 
-<header>
+<header class="site">
   <div class="shell bar">
-    <a class="brand" href="/">
-      <img src="/tcb-logo.png" alt="">
-      <span class="wordmark">
-        <b>TCB Concepts</b>
-        <span class="sub">Tri-Cities Board</span>
+    <a class="brand" href="#top" aria-label="Tri-Cities Board Concepts, back to top">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path d="M4 30L12 14L17 22L22 12L30 26L36 18L40 30" stroke="#4ADE80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20.5 14.5L22 12L23.5 14.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+        <line x1="8" y1="26" x2="8" y2="30" stroke="#4ADE80" stroke-width="1.5"/>
+        <path d="M4.5 26L8 19L11.5 26" fill="#22C55E" opacity=".9"/>
+        <path d="M2 34C8 31 14 35 20 32C26 29 32 33 40 31" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+      </svg>
+      <span class="wm">
+        <b>Tri-Cities Board</b>
+        <i>Concepts</i>
       </span>
     </a>
     <nav>
-      <a href="#concepts">Concepts</a>
-      <a href="#how" class="hide-sm">How it works</a>
-      <a class="btn sm" href="#contact">Get a concept</a>
+      <a href="#work">The work</a>
+      <a href="#how" class="hide-md">How it works</a>
+      <a href="#fit" class="hide-md">Who we say yes to</a>
+      <a class="btn sm" href="#request">Ask us</a>
     </nav>
   </div>
 </header>
 
-<main>
-  <div class="hero">
+<main id="top">
+
+  <!-- HERO -->
+  <div class="hero on-dark">
     <div class="shell">
-      <div class="eyebrow">Staging &amp; showcase</div>
-      <h1>Real websites, built before you commit.</h1>
+      <p class="eyebrow">A Tri-Cities Board initiative</p>
+      <h1>We build the website your organization keeps putting off.</h1>
       <p class="lede">
-        Tri-Cities Board builds working site concepts for local organizations, businesses and
-        partners. Not a slide deck and not a flat mockup — a live page you can open on your
-        phone, click through, and hand to your board.
+        Tri-Cities Board is the free community hub for Port Coquitlam, Port Moody and Coquitlam.
+        Concepts is the other half of that work. We rebuild websites for the organizations,
+        businesses and creatives who make things happen here &mdash; <b>usually as a collaboration,
+        sometimes as paid work, and only when it is a fit.</b>
       </p>
       <div class="cta">
-        <a class="btn" href="#concepts">View the concepts</a>
-        <a class="btn ghost" href="#how">How it works</a>
+        <a class="btn lg" href="#work">See the work <span class="arw" aria-hidden="true">&rarr;</span></a>
+        <a class="btn lg ghost" href="#request">Ask us to build yours</a>
       </div>
-
-      <div class="facts">
-        <div class="fact"><b>Live pages</b><span>Every concept is clickable, not a picture</span></div>
-        <div class="fact"><b>Your brand</b><span>Built in your colours, not ours</span></div>
-        <div class="fact"><b>Local</b><span>Built in the Tri-Cities, for the Tri-Cities</span></div>
-        <div class="fact"><b>No obligation</b><span>See it first, decide after</span></div>
+      <div class="pillrow">
+        <span>Port Coquitlam</span>
+        <span>Port Moody</span>
+        <span>Coquitlam</span>
+        <span>Anmore</span>
+        <span>Belcarra</span>
       </div>
     </div>
   </div>
 
-  <section id="concepts">
+  <!-- WORK -->
+  <section id="work">
     <div class="shell">
       <div class="head">
-        <h2>Concepts</h2>
-        <p>Each concept is a full working page built for a specific organization. Open one and click around.</p>
+        <p class="eyebrow">The work</p>
+        <h2>Real pages, not slide decks.</h2>
+        <p>
+          Every concept here is a finished, working website you can open on your phone and click
+          through. We build them before anyone asks, at our own cost, so the conversation starts
+          with something real instead of a quote.
+        </p>
       </div>
 
-      <div class="grid">
+      <div class="projects">
 
-        <article class="card">
-          <div class="swatch pirates">Port Coquitlam<br>Minor Hockey</div>
-          <div class="body">
-            <div class="tag">Sports association</div>
+        <a class="proj" href="/concepts/poco-pirates/">
+          <div class="crest pirates">
+            <small>Est. 1974</small>
+            Port Coquitlam<br>Minor Hockey
+          </div>
+          <div class="in">
+            <div class="kind">Sports association</div>
             <h3>PoCo Pirates</h3>
             <p>
-              A full rebuild concept for Port Coquitlam Minor Hockey: registration front and centre,
-              public game schedules, division pages, Pirates Cup, team resources and the gear shop.
+              Fifty years of hockey, buried in a site parents could not book from. Registration
+              moved to the front, public game schedules, division pages, Pirates Cup and the gear shop.
             </p>
-            <div class="pills">
-              <span class="pill">Registration flow</span>
-              <span class="pill">Schedules</span>
-              <span class="pill">Divisions</span>
-              <span class="pill">Shop</span>
+            <div class="chips">
+              <span class="chip">Registration</span>
+              <span class="chip">Schedules</span>
+              <span class="chip">Divisions</span>
+              <span class="chip">Shop</span>
             </div>
             <div class="foot">
-              <a class="btn sm" href="/concepts/poco-pirates/">Open concept</a>
-              <span class="status">Ready</span>
+              <span class="open">Open the concept <span class="arw" aria-hidden="true">&rarr;</span></span>
+              <span class="state live">Live</span>
             </div>
           </div>
-        </article>
+        </a>
 
-        <article class="card">
-          <div class="swatch soon">Tri-Cities Chamber<br>of Commerce</div>
-          <div class="body">
-            <div class="tag">Business association</div>
+        <div class="proj">
+          <div class="crest pending">
+            <small>In progress</small>
+            Tri-Cities Chamber<br>of Commerce
+          </div>
+          <div class="in">
+            <div class="kind">Business association</div>
             <h3>Tri-Cities Chamber</h3>
             <p>
-              Member directory, events calendar and a partnership model that ties chamber
-              membership to visibility across the Tri-Cities Board network.
+              A member directory worth searching, an events calendar members can post to
+              themselves, and a partnership that puts every member on the Board.
             </p>
-            <div class="pills">
-              <span class="pill">Member directory</span>
-              <span class="pill">Events</span>
-              <span class="pill">Partnership</span>
+            <div class="chips">
+              <span class="chip">Directory</span>
+              <span class="chip">Events</span>
+              <span class="chip">Partnership</span>
             </div>
             <div class="foot">
-              <a class="btn sm ghost" href="#contact">In progress</a>
-              <span class="status draft">Drafting</span>
+              <span class="open" style="color:var(--steel)">Not published yet</span>
+              <span class="state build">Building</span>
             </div>
           </div>
-        </article>
+        </div>
 
-        <article class="card">
-          <div class="swatch soon">Fountainhead<br>Network</div>
-          <div class="body">
-            <div class="tag">Community network</div>
+        <div class="proj">
+          <div class="crest pending">
+            <small>In progress</small>
+            Fountainhead<br>Network
+          </div>
+          <div class="in">
+            <div class="kind">Community network</div>
             <h3>Fountainhead Network</h3>
             <p>
-              A concept for a multi-venue community network: locations, programs, and a single
-              place for the community to find what is happening this week.
+              Several venues, one calendar. Locations, programs and a single honest answer to the
+              question people actually ask: what is on this week?
             </p>
-            <div class="pills">
-              <span class="pill">Locations</span>
-              <span class="pill">Programs</span>
-              <span class="pill">What's on</span>
+            <div class="chips">
+              <span class="chip">Locations</span>
+              <span class="chip">Programs</span>
+              <span class="chip">What&rsquo;s on</span>
             </div>
             <div class="foot">
-              <a class="btn sm ghost" href="#contact">In progress</a>
-              <span class="status draft">Drafting</span>
+              <span class="open" style="color:var(--steel)">Not published yet</span>
+              <span class="state build">Building</span>
             </div>
           </div>
-        </article>
+        </div>
+
+        <div class="proj">
+          <div class="crest pending">
+            <small>Open slot</small>
+            Your organization<br>could be here
+          </div>
+          <div class="in">
+            <div class="kind">Unclaimed</div>
+            <h3>Next concept</h3>
+            <p>
+              We take on a small number of these at a time. If your organization serves the
+              Tri-Cities and your website is holding it back, tell us what you are working with.
+            </p>
+            <div class="chips">
+              <span class="chip">Non-profits</span>
+              <span class="chip">Clubs &amp; teams</span>
+              <span class="chip">Businesses</span>
+              <span class="chip">Creatives</span>
+            </div>
+            <div class="foot">
+              <a class="open" href="#request">Ask us <span class="arw" aria-hidden="true">&rarr;</span></a>
+              <span class="state">Open</span>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
   </section>
 
-  <section id="how" class="alt">
+  <!-- HOW -->
+  <section id="how" class="tint">
     <div class="shell">
       <div class="head">
-        <h2>How it works</h2>
-        <p>No contract to see your concept. We build it, you look at it, and you decide from there.</p>
+        <p class="eyebrow">How this works</p>
+        <h2>We build first and talk after.</h2>
+        <p>
+          Nobody signs anything to see their concept. We would rather show you what your
+          organization could have than describe it in a meeting.
+        </p>
       </div>
       <div class="steps">
         <div class="step">
           <div class="n">1</div>
-          <h3>We study what you have</h3>
-          <p>Your current site, what your members ask for, and what your volunteers keep re-typing by hand.</p>
+          <h3>We choose a project</h3>
+          <p>Usually one we already noticed &mdash; a team, a non-profit, a shop whose work deserves more attention than its website gives it.</p>
         </div>
         <div class="step">
           <div class="n">2</div>
-          <h3>We build a live concept</h3>
-          <p>A real, working page in your colours with your content. You get a private link to share with your board.</p>
+          <h3>We build the concept</h3>
+          <p>A real, working site in your colours with your content, at our cost. You get a private link you can forward to your board.</p>
         </div>
         <div class="step">
           <div class="n">3</div>
-          <h3>You mark it up</h3>
-          <p>Tell us what is wrong, what is missing, and what your organization actually needs. We revise.</p>
+          <h3>You tear it apart</h3>
+          <p>Tell us what we got wrong, what is missing, and what your volunteers actually need. This is the part that matters most.</p>
         </div>
         <div class="step">
           <div class="n">4</div>
-          <h3>We launch it</h3>
-          <p>Hosting, domain, email and the ongoing updates. Or take the files and run it yourself.</p>
+          <h3>We finish it, or we don&rsquo;t</h3>
+          <p>Launch it with hosting, domain and updates handled. Or take the files and run it yourself. Walking away costs you nothing.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="contact">
+  <!-- FIT -->
+  <section id="fit">
     <div class="shell">
-      <div class="panel">
-        <div>
-          <h2>Want a concept for your organization?</h2>
-          <p>Tell us who you are and what your current site is not doing. We will build one and send you the link.</p>
-        </div>
-        <div class="cta">
-          <a class="btn" href="mailto:admin@tricitiesboard.org?subject=Website%20concept%20request">Email us</a>
-          <a class="btn ghost" href="https://tricitiesboard.org" target="_blank" rel="noopener">Tri-Cities Board</a>
+      <div class="head">
+        <p class="eyebrow">Who we say yes to</p>
+        <h2>We choose the projects, and we say no often.</h2>
+        <p>
+          This is not an agency and we are not trying to fill a pipeline. A small team can only do
+          a few of these properly at once, so we would rather be honest about how we pick.
+        </p>
+      </div>
+
+      <div class="split">
+        <ul class="checks">
+          <li>
+            <span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span>
+              <b>You serve the Tri-Cities</b>
+              <span>Port Coquitlam, Port Moody, Coquitlam, Anmore or Belcarra. Local is the whole point.</span>
+            </span>
+          </li>
+          <li>
+            <span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span>
+              <b>The work is worth more attention than it gets</b>
+              <span>Teams, non-profits, clubs, small businesses and creatives who already do the thing well.</span>
+            </span>
+          </li>
+          <li>
+            <span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span>
+              <b>Someone on your side can decide</b>
+              <span>One person who can say yes. Projects that need six approvals stall and everybody loses.</span>
+            </span>
+          </li>
+          <li>
+            <span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span>
+              <b>You will actually use it</b>
+              <span>A site nobody updates dies in a year. We want it kept current after we hand it over.</span>
+            </span>
+          </li>
+          <li>
+            <span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span>
+              <b>You are willing to be on the Board</b>
+              <span>Your events, listings, volunteer roles and stories, kept current on Tri-Cities Board.</span>
+            </span>
+          </li>
+        </ul>
+
+        <div class="noteblock">
+          <h3>Why we are doing this at all</h3>
+          <p>
+            Tri-Cities Board is free to the community. Residents browse and join for nothing,
+            and organizations, businesses and creatives get discovery and engagement without a bill.
+          </p>
+          <p>
+            That only works if the good ones are actually on it. So instead of selling ads
+            at people, we build the thing they were never going to get around to, and ask them
+            to show up on the Board in return.
+          </p>
+          <p>
+            It is a trade, not a favour. You get a website you would have paid thousands for.
+            The Tri-Cities gets one more place worth finding.
+          </p>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- TRACKS -->
+  <section class="tint">
+    <div class="shell">
+      <div class="head">
+        <p class="eyebrow">What it costs</p>
+        <h2>We would rather collaborate than invoice.</h2>
+        <p>
+          Both doors are open. Most organizations we work with come through the first one.
+        </p>
+      </div>
+      <div class="tracks">
+
+        <div class="track pref">
+          <span class="flag">What we prefer</span>
+          <h3>Collaboration</h3>
+          <div class="price">No invoice</div>
+          <p>
+            We build, host and maintain the site. You bring your organization onto Tri-Cities Board
+            and keep it alive there.
+          </p>
+          <ul>
+            <li>A full rebuild, designed and built by us</li>
+            <li>Hosting, domain help and ongoing updates</li>
+            <li>Your events, programs and volunteer roles posted on the Board</li>
+            <li>A claimed, verified profile in the local directory</li>
+            <li>Coverage on Boardwide Media when there is something to cover</li>
+          </ul>
+        </div>
+
+        <div class="track alt">
+          <h3>Paid work</h3>
+          <div class="price">Quoted per project, local rates</div>
+          <p>
+            Some organizations need to own it outright, on their own timeline, with a contract and
+            a support agreement behind it. That is a fair thing to want.
+          </p>
+          <ul>
+            <li>Your timeline and your scope, in writing</li>
+            <li>Full ownership and handover of the files</li>
+            <li>A named support agreement instead of goodwill</li>
+            <li>No obligation to be on the Board</li>
+            <li>Quoted after we understand the job, never before</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- REQUEST -->
+  <section id="request">
+    <div class="shell">
+      <div class="formwrap">
+
+        <div class="formside">
+          <p class="eyebrow">Ask us</p>
+          <h2>Tell us what you are working with.</h2>
+          <p>
+            A few honest sentences beat a polished brief. If it is a fit, we will come back with
+            questions and start building. If it is not, we will tell you that plainly and quickly.
+          </p>
+          <ul class="reassure">
+            <li><span class="dot"></span><span>No cost, no contract, and no sales call booked behind your back.</span></li>
+            <li><span class="dot"></span><span>A real person reads every one of these. Usually within a week.</span></li>
+            <li><span class="dot"></span><span>We will say no if we cannot do it justice, and we will say why.</span></li>
+            <li><span class="dot"></span><span>Nothing you send here gets published without your say-so.</span></li>
+          </ul>
+        </div>
+
+        <form id="ask" novalidate>
+          <div class="fbody">
+            <div class="fgrid">
+              <div class="field wide">
+                <label for="org">Organization<span class="req">*</span></label>
+                <input type="text" id="org" name="org" autocomplete="organization" placeholder="Port Coquitlam Minor Hockey">
+                <span class="err" data-for="org"></span>
+              </div>
+
+              <div class="field wide">
+                <label for="kind">What kind of organization<span class="req">*</span></label>
+                <select id="kind" name="kind">
+                  <option value="">Choose one</option>
+                  <option>Non-profit, club or team</option>
+                  <option>Local business</option>
+                  <option>Artist, musician or maker</option>
+                  <option>School or community group</option>
+                  <option>Something else</option>
+                </select>
+                <span class="err" data-for="kind"></span>
+              </div>
+
+              <div class="field">
+                <label for="name">Your name<span class="req">*</span></label>
+                <input type="text" id="name" name="name" autocomplete="name" placeholder="Jamie Chen">
+                <span class="err" data-for="name"></span>
+              </div>
+
+              <div class="field">
+                <label for="email">Email<span class="req">*</span></label>
+                <input type="email" id="email" name="email" autocomplete="email" placeholder="you@yourorg.org">
+                <span class="err" data-for="email"></span>
+              </div>
+
+              <div class="field wide">
+                <label for="site">Current website <span class="opt">optional</span></label>
+                <input type="url" id="site" name="site" placeholder="https://">
+                <span class="err" data-for="site"></span>
+              </div>
+
+              <div class="field wide">
+                <label for="problem">What is not working right now<span class="req">*</span></label>
+                <textarea id="problem" name="problem" placeholder="Parents cannot register from a phone. Our schedule lives in a PDF somebody re-uploads every week. Nobody has the login for the old site."></textarea>
+                <span class="err" data-for="problem"></span>
+              </div>
+
+              <div class="field wide">
+                <label>Which door are you knocking on<span class="req">*</span></label>
+                <div class="radios">
+                  <label class="radio">
+                    <input type="radio" name="track" value="Collaboration">
+                    <span><b>Collaboration</b><span>We would join Tri-Cities Board and keep our listings current.</span></span>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="track" value="Paid work">
+                    <span><b>Paid work</b><span>We want to own it outright and pay for it.</span></span>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="track" value="Not sure yet">
+                    <span><b>Not sure yet</b><span>Tell us which makes more sense for us.</span></span>
+                  </label>
+                </div>
+                <span class="err" data-for="track"></span>
+              </div>
+            </div>
+
+            <button class="btn lg" type="submit">Send it to the Board <span class="arw" aria-hidden="true">&rarr;</span></button>
+            <p class="fineprint">
+              Goes to admin@tricitiesboard.org. We do not add you to a list or pass this on.
+            </p>
+          </div>
+
+          <div class="sent" id="sent" role="status" aria-live="polite">
+            <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <h3>That is on its way.</h3>
+            <p id="sentmsg">
+              We opened your email app with everything filled in. Hit send and it lands with us.
+            </p>
+            <p style="margin-top:16px">
+              <button class="btn ghost sm" type="button" id="copybtn">Copy it instead</button>
+            </p>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <div class="closing on-dark">
+    <div class="shell">
+      <p class="eyebrow">The Board</p>
+      <h2>Free to browse, free to join, and built here.</h2>
+      <p>
+        Local news and video, what is on this week, the marketplace, homes and spaces, the
+        businesses next door, and the neighbours behind all of it. One independent site for
+        three cities.
+      </p>
+      <div class="cta">
+        <a class="btn lg" href="https://www.tricitiesboard.org" target="_blank" rel="noopener">Explore the Tri-Cities <span class="arw" aria-hidden="true">&rarr;</span></a>
+        <a class="btn lg ghost" href="#request">Ask us to build yours</a>
+      </div>
+    </div>
+  </div>
+
 </main>
 
-<footer>
-  <div class="shell frow">
-    <span>&copy; <span id="yr">2026</span> Tri-Cities Board</span>
-    <span class="right"><a href="https://tricitiesboard.org" target="_blank" rel="noopener">tricitiesboard.org</a></span>
+<footer class="site">
+  <div class="shell">
+    <div class="frow">
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M4 30L12 14L17 22L22 12L30 26L36 18L40 30" stroke="#4ADE80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 34C8 31 14 35 20 32C26 29 32 33 40 31" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+        </svg>
+        <span class="wm"><b>Tri-Cities Board</b><i>Concepts</i></span>
+      </a>
+      <nav>
+        <a href="#work">The work</a>
+        <a href="#how">How it works</a>
+        <a href="#fit">Who we say yes to</a>
+        <a href="#request">Ask us</a>
+        <a href="https://www.tricitiesboard.org" target="_blank" rel="noopener">tricitiesboard.org</a>
+      </nav>
+    </div>
+    <p class="fnote">
+      Concepts is an initiative of the Tri-Cities Board team. Tri-Cities Board is a free community
+      platform for discovery and engagement across Port Coquitlam, Port Moody, Coquitlam, Anmore and
+      Belcarra. Concept sites are drafts built for discussion and are not affiliated with, endorsed
+      by, or commissioned by the organizations they depict unless stated.
+      &copy; <span id="yr">2026</span> Tri-Cities Board.
+    </p>
   </div>
 </footer>
 
-<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+(function () {
+  var form = document.getElementById('ask');
+  var sent = document.getElementById('sent');
+  var sentmsg = document.getElementById('sentmsg');
+  var copybtn = document.getElementById('copybtn');
+  var lastBody = '';
+
+  function setErr(name, msg) {
+    var el = form.querySelector('.err[data-for="' + name + '"]');
+    if (el) el.textContent = msg || '';
+    var input = form.querySelector('[name="' + name + '"]');
+    var field = input ? input.closest('.field') : null;
+    if (field) field.classList.toggle('bad', !!msg);
+  }
+
+  function val(name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    return el ? el.value.trim() : '';
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var ok = true;
+    ['org', 'kind', 'name', 'email', 'problem', 'track'].forEach(function (n) { setErr(n, ''); });
+
+    if (!val('org'))     { setErr('org', 'We need to know who this is for.'); ok = false; }
+    if (!val('kind'))    { setErr('kind', 'Pick the closest one.'); ok = false; }
+    if (!val('name'))    { setErr('name', 'Who are we replying to?'); ok = false; }
+
+    var email = val('email');
+    if (!email) { setErr('email', 'We need somewhere to reply.'); ok = false; }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setErr('email', 'That address does not look right.'); ok = false; }
+
+    var site = val('site');
+    if (site && !/^https?:\/\/.+\..+/i.test(site)) { setErr('site', 'Include the full address, starting with https://'); ok = false; }
+
+    var problem = val('problem');
+    if (!problem) { setErr('problem', 'Even one sentence helps.'); ok = false; }
+    else if (problem.length < 15) { setErr('problem', 'A little more detail, please.'); ok = false; }
+
+    var track = form.querySelector('[name="track"]:checked');
+    if (!track) { setErr('track', 'Pick one. Not sure yet is a fine answer.'); ok = false; }
+
+    if (!ok) {
+      var bad = form.querySelector('.field.bad');
+      if (bad) {
+        bad.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        var f = bad.querySelector('input,select,textarea');
+        if (f) f.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    var body =
+      'Organization: ' + val('org') + '\n' +
+      'Type: ' + val('kind') + '\n' +
+      'Contact: ' + val('name') + '\n' +
+      'Email: ' + email + '\n' +
+      'Current website: ' + (site || 'none') + '\n' +
+      'Preference: ' + track.value + '\n\n' +
+      'What is not working right now:\n' + problem + '\n\n' +
+      '--\nSent from the Tri-Cities Board Concepts page.';
+
+    lastBody = body;
+
+    var href = 'mailto:admin@tricitiesboard.org' +
+      '?subject=' + encodeURIComponent('Concept request: ' + val('org')) +
+      '&body=' + encodeURIComponent(body);
+
+    form.classList.add('done');
+    sent.classList.add('on');
+    sent.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+    window.location.href = href;
+  });
+
+  copybtn.addEventListener('click', function () {
+    var text = 'To: admin@tricitiesboard.org\n\n' + lastBody;
+    function done() {
+      copybtn.textContent = 'Copied';
+      sentmsg.textContent = 'Copied. Paste it into an email to admin@tricitiesboard.org and we will pick it up.';
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); }
+      catch (err) { sentmsg.textContent = 'Email admin@tricitiesboard.org and we will pick it up.'; }
+      document.body.removeChild(ta);
+    }
+  });
+})();
+</script>
 </body>
 </html>
