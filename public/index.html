@@ -21,7 +21,7 @@
   --night:#111827; --night-2:#1F2937; --night-3:#0B1220;
   --ink:#111827; --steel:#6B7280;
   --paper:#FFFFFF; --paper-2:#F9FAFB; --card:#FFFFFF; --line:#E5E7EB;
-  --shell:1140px;
+  --shell:1368px;
   --display:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   --shadow-sm:0 1px 2px rgba(17,24,39,.06);
@@ -108,7 +108,11 @@ section.tint{background:var(--paper-2);border-top:1px solid var(--line);border-b
 .head p{color:var(--steel);font-size:17px;margin:14px 0 0}
 
 /* ---------- projects ---------- */
-.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:22px}
+.projects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.proj.feat{grid-column:span 2}
+.proj.feat .crest{height:168px;font-size:26px}
+.proj.feat .crest small{font-size:11.5px}
+.proj.feat .in p{max-width:62ch;font-size:15.4px}
 .proj{background:var(--card);border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;text-decoration:none;transition:transform .2s,box-shadow .2s,border-color .2s}
 a.proj:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:transparent}
 .crest{height:126px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:0 22px;font-family:var(--display);font-weight:800;font-size:20px;line-height:1.13;letter-spacing:-.015em}
@@ -225,8 +229,15 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 .fnote{margin:22px 0 0;font-size:12.8px;color:#6B7280;max-width:74ch;line-height:1.55}
 
 /* ---------- responsive ---------- */
+/* ---------- back to top ---------- */
+.totop{position:fixed;right:22px;bottom:22px;z-index:90;width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;background:var(--green);color:#fff;box-shadow:0 6px 20px rgba(17,24,39,.28);display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .2s,transform .2s,background .15s}
+.totop.show{opacity:1;transform:none;pointer-events:auto}
+.totop:hover{background:var(--green-dark)}
+.totop svg{width:20px;height:20px;stroke:#fff;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
 @media (max-width:900px){
   .split,.formwrap{grid-template-columns:1fr;gap:38px}
+  .projects{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:820px){
   .bar nav a.hide-md{display:none}
@@ -244,6 +255,10 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
   .closing{padding:52px 0}
   .head{margin-bottom:28px}
   .fgrid{grid-template-columns:1fr}
+  .projects{grid-template-columns:1fr}
+  .proj.feat{grid-column:auto}
+  .proj.feat .crest{height:136px;font-size:22px}
+  .totop{right:14px;bottom:14px;width:42px;height:42px}
   form{padding:22px 18px}
   .frow nav{margin-left:0;gap:16px}
   .hero .cta .btn,.closing .cta .btn{flex:1 1 auto}
@@ -325,7 +340,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
       <div class="projects">
 
-        <a class="proj" href="/concepts/poco-pirates/">
+        <a class="proj feat" href="/concepts/poco-pirates/">
           <div class="crest pirates">
             <small>Est. 1974</small>
             Port Coquitlam<br>Minor Hockey
@@ -349,54 +364,6 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
             </div>
           </div>
         </a>
-
-        <div class="proj">
-          <div class="crest pending">
-            <small>In progress</small>
-            Tri-Cities Chamber<br>of Commerce
-          </div>
-          <div class="in">
-            <div class="kind">Business association</div>
-            <h3>Tri-Cities Chamber</h3>
-            <p>
-              A member directory worth searching, an events calendar members can post to
-              themselves, and a partnership that puts every member on the Board.
-            </p>
-            <div class="chips">
-              <span class="chip">Directory</span>
-              <span class="chip">Events</span>
-              <span class="chip">Partnership</span>
-            </div>
-            <div class="foot">
-              <span class="open" style="color:var(--steel)">Not published yet</span>
-              <span class="state build">Building</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="proj">
-          <div class="crest pending">
-            <small>In progress</small>
-            Fountainhead<br>Network
-          </div>
-          <div class="in">
-            <div class="kind">Community network</div>
-            <h3>Fountainhead Network</h3>
-            <p>
-              Several venues, one calendar. Locations, programs and a single honest answer to the
-              question people actually ask: what is on this week?
-            </p>
-            <div class="chips">
-              <span class="chip">Locations</span>
-              <span class="chip">Programs</span>
-              <span class="chip">What&rsquo;s on</span>
-            </div>
-            <div class="foot">
-              <span class="open" style="color:var(--steel)">Not published yet</span>
-              <span class="state build">Building</span>
-            </div>
-          </div>
-        </div>
 
         <div class="proj">
           <div class="crest pending">
@@ -710,6 +677,10 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
 </main>
 
+<button class="totop" id="totop" type="button" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
 <footer class="site">
   <div class="shell">
     <div class="frow">
@@ -740,6 +711,16 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+(function () {
+  var btn = document.getElementById('totop');
+  function check() { btn.classList.toggle('show', window.scrollY > 600); }
+  window.addEventListener('scroll', check, { passive: true });
+  check();
+  btn.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
 
 (function () {
   var form = document.getElementById('ask');
