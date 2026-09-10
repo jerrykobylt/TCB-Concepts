@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Tri-Cities Board Concepts</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#16A34A; --green-dark:#15803D; --green-lite:#4ADE80; --green-wash:#DCFCE7;
+  --sky:#0EA5E9; --amber:#F59E0B; --red:#DC2626;
+  --night:#111827; --night-2:#1F2937;
+  --ink:#111827; --steel:#6B7280; --paper:#FFFFFF; --paper-2:#F3F4F6; --card:#FFFFFF; --line:#E5E7EB;
+  --display:"Outfit",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ink:#F3F4F6; --steel:#9CA3AF; --paper:#0F1623; --paper-2:#0B1220; --card:#182233; --line:#26303F; --green-wash:#0C2A1A;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper-2);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3{font-family:var(--display);margin:0;letter-spacing:-.015em;line-height:1.15}
+button,input,select,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+
+/* top bar */
+.top{background:var(--night);color:#fff;position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(255,255,255,.08)}
+.top .in{max-width:1368px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:9px;color:#fff;text-decoration:none}
+.brand svg{width:28px;height:28px}
+.brand b{font-family:var(--display);font-size:15px;display:block;line-height:1}
+.brand i{font-style:normal;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--green-lite);display:block;margin-top:3px}
+.tabs{display:flex;gap:2px;margin-left:18px}
+.tabs button{background:none;border:0;color:#D1D5DB;padding:8px 12px;border-radius:7px;cursor:pointer;font-weight:500}
+.tabs button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.tabs button.on{color:#fff;background:rgba(255,255,255,.14)}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:#9CA3AF}
+.who button{background:none;border:1px solid rgba(255,255,255,.2);color:#D1D5DB;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12.5px}
+.who button:hover{background:rgba(255,255,255,.1);color:#fff}
+
+.wrap{max-width:1368px;margin:0 auto;padding:24px 20px 60px}
+
+/* buttons & fields */
+.btn{font-family:var(--display);font-weight:600;border:0;cursor:pointer;background:var(--green);color:#fff;padding:10px 16px;border-radius:9px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{background:var(--green-dark)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.ghost:hover{background:var(--paper-2)}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:8px}
+.btn.danger{background:transparent;color:var(--red);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.55;cursor:default}
+label{font-family:var(--display);font-weight:600;font-size:13px;display:block;margin-bottom:5px}
+label small{color:var(--steel);font-weight:500;font-family:var(--body)}
+input[type=text],input[type=email],input[type=url],select,textarea{width:100%;background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+textarea{min-height:110px;resize:vertical;line-height:1.55}
+textarea.plan{min-height:200px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.field{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* cards & lists */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.head h2{font-size:22px}
+.head .sp{flex:1}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar select,.toolbar input{width:auto;min-width:160px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--steel);font-weight:600}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--paper-2)}
+tbody tr.sel{background:var(--green-wash)}
+td .sub{color:var(--steel);font-size:12.5px;display:block}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--steel);white-space:nowrap}
+.pill.new{color:var(--green);border-color:var(--green)}
+.pill.reviewing{color:var(--amber);border-color:var(--amber)}
+.pill.accepted,.pill.live,.pill.managed{color:#fff;background:var(--green);border-color:var(--green)}
+.pill.declined,.pill.spam{color:var(--red);border-color:var(--red)}
+.pill.building,.pill.concept{color:var(--sky);border-color:var(--sky)}
+.empty{color:var(--steel);padding:30px 0;text-align:center}
+
+/* split */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+@media (max-width:980px){.split{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}}
+.detail dl{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;margin:0 0 16px}
+.detail dt{color:var(--steel);font-size:13px}
+.detail dd{margin:0;word-break:break-word}
+.problem{white-space:pre-wrap;background:var(--paper-2);border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:16px}
+
+/* plan editor */
+.sec{border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.sec .sh{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--paper-2);border-bottom:1px solid var(--line)}
+.sec .sh h3{font-size:14.5px}
+.sec .sh .n{font-family:var(--display);font-weight:700;font-size:12px;width:24px;height:24px;border-radius:7px;background:var(--green-wash);color:var(--green-dark);display:flex;align-items:center;justify-content:center}
+.sec .sh .hint{color:var(--steel);font-size:12.5px}
+.sec .sh .tg{margin-left:auto;background:none;border:1px solid var(--line);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--steel)}
+.sec .body{padding:12px 14px}
+.sec textarea{border-radius:8px}
+.md{line-height:1.6}
+.md p{margin:0 0 10px}.md ul,.md ol{margin:0 0 10px;padding-left:22px}.md li{margin-bottom:5px}.md strong{font-weight:600}
+.md h1,.md h2,.md h3{font-size:15px;margin:12px 0 6px}
+
+/* sign in */
+.auth{max-width:440px;margin:60px auto 0}
+.auth h1{font-size:26px;margin-bottom:8px}
+.auth p{color:var(--steel);margin:0 0 18px}
+.msg{padding:12px 14px;border-radius:9px;background:var(--green-wash);color:var(--green-dark);margin-top:12px;font-size:13.5px}
+.msg.err{background:#FEE2E2;color:#991B1B}
+@media (prefers-color-scheme:dark){.msg{color:var(--green-lite)}.msg.err{background:#3b1111;color:#fca5a5}}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--night);color:#fff;padding:10px 16px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+.toast.on{opacity:1}
+.savebar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 0 0;margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.savebar .sp{flex:1}
+.muted{color:var(--steel);font-size:12.5px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="in">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 30L12 14L17 22L22 12L30 26L36 18L40 30" stroke="#4ADE80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 26L8 19L11.5 26" fill="#22C55E" opacity=".9"/><path d="M2 34C8 31 14 35 20 32C26 29 32 33 40 31" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>
+      <span><b>Tri-Cities Board</b><i>Concepts admin</i></span>
+    </a>
+    <div class="tabs" id="tabs" hidden>
+      <button data-view="requests" class="on">Requests</button>
+      <button data-view="projects">Projects</button>
+    </div>
+    <div class="who" id="who" hidden>
+      <span id="whoEmail"></span>
+      <button id="signout">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- SIGN IN -->
+  <div class="auth card" id="auth">
+    <h1>Sign in</h1>
+    <p>We will email you a one-time link. Only Tri-Cities Board team addresses get in.</p>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@tricitiesboard.org" autocomplete="email">
+    </div>
+    <button class="btn" id="sendlink">Email me a sign-in link</button>
+    <div id="authmsg"></div>
+  </div>
+
+  <!-- NOT ALLOWED -->
+  <div class="auth card" id="denied" hidden>
+    <h1>Not on the list.</h1>
+    <p>You are signed in as <b id="deniedEmail"></b>, but that address is not an admin. Ask admin@tricitiesboard.org to add you.</p>
+    <button class="btn ghost" id="signout2">Sign out</button>
+  </div>
+
+  <!-- REQUESTS -->
+  <div id="view-requests" hidden>
+    <div class="split">
+      <div class="card">
+        <div class="head"><h2>Requests</h2><span class="sp"></span><span class="muted" id="reqCount"></span></div>
+        <div class="toolbar">
+          <select id="reqStatus">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="accepted">Accepted</option>
+            <option value="declined">Declined</option>
+            <option value="spam">Spam</option>
+          </select>
+          <input type="text" id="reqSearch" placeholder="Search org, name, email">
+        </div>
+        <table>
+          <thead><tr><th>Received</th><th>Organization</th><th>Door</th><th>Status</th></tr></thead>
+          <tbody id="reqRows"></tbody>
+        </table>
+        <div class="empty" id="reqEmpty" hidden>Nothing here yet.</div>
+      </div>
+
+      <div class="card detail" id="reqDetail" hidden>
+        <div class="head"><h2 id="rdOrg"></h2><span class="sp"></span><span class="pill" id="rdPill"></span></div>
+        <dl>
+          <dt>Received</dt><dd id="rdWhen"></dd>
+          <dt>Type</dt><dd id="rdKind"></dd>
+          <dt>Contact</dt><dd id="rdContact"></dd>
+          <dt>Current site</dt><dd id="rdSite"></dd>
+          <dt>Which door</dt><dd id="rdTrack"></dd>
+          <dt>Project</dt><dd id="rdProject"></dd>
+        </dl>
+        <label>What is not working</label>
+        <div class="problem" id="rdProblem"></div>
+        <div class="grid2">
+          <div class="field">
+            <label for="rdStatus">Status</label>
+            <select id="rdStatus">
+              <option value="new">New</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="accepted">Accepted</option>
+              <option value="declined">Declined</option>
+              <option value="spam">Spam</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="rdNotes">Notes <small>internal only</small></label>
+          <textarea id="rdNotes" placeholder="What we think, who spoke to them, next step."></textarea>
+        </div>
+        <div class="savebar">
+          <button class="btn" id="rdSave">Save</button>
+          <button class="btn ghost" id="rdMakeProject">Create project from this</button>
+          <span class="sp"></span>
+          <a class="btn ghost sm" id="rdReply" href="#">Reply by email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div id="view-projects" hidden>
+    <div class="split">
+      <div class="card">
+        <div class="head"><h2>Projects</h2><span class="sp"></span><button class="btn sm" id="newProject">New project</button></div>
+        <table>
+          <thead><tr><th>Project</th><th>Status</th><th>Track</th><th>Updated</th></tr></thead>
+          <tbody id="projRows"></tbody>
+        </table>
+        <div class="empty" id="projEmpty" hidden>No projects yet.</div>
+      </div>
+
+      <div class="card" id="projDetail" hidden>
+        <div class="head">
+          <h2 id="pdTitle">Project</h2>
+          <span class="sp"></span>
+          <a class="btn ghost sm" id="pdConcept" href="#" target="_blank" rel="noopener">Open concept</a>
+          <a class="btn ghost sm" id="pdPlan" href="#" target="_blank" rel="noopener">Print plan</a>
+        </div>
+
+        <div class="grid2">
+          <div class="field"><label for="pName">Project name</label><input type="text" id="pName" placeholder="PoCo Pirates"></div>
+          <div class="field"><label for="pSlug">Slug <small>URL-safe, unique</small></label><input type="text" id="pSlug" placeholder="poco-pirates"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="pOrg">Organization</label><input type="text" id="pOrg" placeholder="Port Coquitlam Minor Hockey Association"></div>
+          <div class="field"><label for="pType">Organization type</label><input type="text" id="pType" placeholder="Sports association"></div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label for="pStatus">Status</label>
+            <select id="pStatus">
+              <option value="prospect">Prospect</option>
+              <option value="concept">Concept</option>
+              <option value="building">Building</option>
+              <option value="live">Live</option>
+              <option value="handed_over">Handed over</option>
+              <option value="managed">Managed</option>
+              <option value="declined">Declined</option>
+            </select>
+          </div>
+          <div class="field"><label for="pTrack">Track</label>
+            <select id="pTrack">
+              <option value="undecided">Undecided</option>
+              <option value="collaboration">Collaboration</option>
+              <option value="managed">Managed service</option>
+              <option value="paid">Paid work</option>
+            </select>
+          </div>
+          <div class="field"><label for="pContact">Contact</label><input type="text" id="pContact" placeholder="Name"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="pEmail">Contact email</label><input type="email" id="pEmail"></div>
+          <div class="field"><label for="pCurrent">Current website</label><input type="url" id="pCurrent" placeholder="https://"></div>
+        </div>
+        <div class="field"><label for="pConcept">Concept URL</label><input type="url" id="pConcept" placeholder="https://tcb-concepts.vercel.app/concepts/…"></div>
+        <div class="field"><label for="pSummary">Summary <small>one paragraph, appears at the top of the plan</small></label><textarea id="pSummary"></textarea></div>
+
+        <h3 style="font-size:17px;margin:22px 0 12px">Project plan</h3>
+        <p class="muted" style="margin:0 0 12px">Markdown. Bullets, bold and short paragraphs. This becomes the printable proposal.</p>
+
+        <div class="sec" data-key="current_stack">
+          <div class="sh"><span class="n">1</span><h3>Where the site is today</h3><span class="hint">what it runs on, what is wrong</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+        <div class="sec" data-key="replacing_with">
+          <div class="sh"><span class="n">2</span><h3>What we are building</h3><span class="hint">and what it runs on</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+        <div class="sec" data-key="owner_wins">
+          <div class="sh"><span class="n">3</span><h3>How this makes their life easier</h3><span class="hint">for the owner and the volunteers</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+        <div class="sec" data-key="process">
+          <div class="sh"><span class="n">4</span><h3>How we work together</h3><span class="hint">step by step</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+        <div class="sec" data-key="account_options">
+          <div class="sh"><span class="n">5</span><h3>Their options</h3><span class="hint">collaboration, managed, paid</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+        <div class="sec" data-key="board_commitments">
+          <div class="sh"><span class="n">6</span><h3>What we expect on the Board</h3><span class="hint">their commitments to Tri-Cities Board</span><button class="tg" type="button">Preview</button></div>
+          <div class="body"><textarea class="plan"></textarea><div class="md" hidden></div></div>
+        </div>
+
+        <div class="savebar">
+          <button class="btn" id="pSave">Save project</button>
+          <span class="sp"></span>
+          <span class="muted" id="pMeta"></span>
+          <button class="btn danger sm" id="pDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="/admin/config.js"></script>
+<script>
+(function () {
+  var C = window.TCB_ADMIN;
+  var sb = window.supabase.createClient(C.supabaseUrl, C.supabaseKey);
+  var $ = function (id) { return document.getElementById(id); };
+  var PLAN_KEYS = ['current_stack','replacing_with','owner_wins','process','account_options','board_commitments'];
+  var TRACK_MAP = { 'Collaboration': 'collaboration', 'Paid work': 'paid', 'Not sure yet': 'undecided' };
+
+  var state = { user: null, isAdmin: false, view: 'requests', requests: [], projects: [], req: null, proj: null };
+
+  function toast(msg, ms) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('on'); }, ms || 2200);
+  }
+  function fmt(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleString('en-CA', { timeZone: 'America/Vancouver', dateStyle: 'medium', timeStyle: 'short' });
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function slugify(s) { return String(s).toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
+  function md(s) { return s ? marked.parse(s, { breaks: true }) : '<p class="muted">Nothing written yet.</p>'; }
+
+  /* ---------------- auth ---------------- */
+  $('sendlink').addEventListener('click', async function () {
+    var email = $('email').value.trim();
+    var box = $('authmsg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { box.innerHTML = '<div class="msg err">That address does not look right.</div>'; return; }
+    this.disabled = true;
+    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin/' } });
+    this.disabled = false;
+    box.innerHTML = r.error
+      ? '<div class="msg err">' + esc(r.error.message) + '</div>'
+      : '<div class="msg">Link sent to ' + esc(email) + '. Open it on this device.</div>';
+  });
+  $('email').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('sendlink').click(); });
+  $('signout').addEventListener('click', function () { sb.auth.signOut(); });
+  $('signout2').addEventListener('click', function () { sb.auth.signOut(); });
+
+  sb.auth.onAuthStateChange(function (_ev, session) { boot(session); });
+
+  async function boot(session) {
+    state.user = session ? session.user : null;
+    if (!state.user) { show('auth'); return; }
+    var r = await sb.rpc('is_admin');
+    state.isAdmin = !!r.data;
+    if (!state.isAdmin) { $('deniedEmail').textContent = state.user.email; show('denied'); return; }
+    $('whoEmail').textContent = state.user.email;
+    show('app');
+    await Promise.all([loadRequests(), loadProjects()]);
+    setView(state.view);
+  }
+
+  function show(which) {
+    $('auth').hidden = which !== 'auth';
+    $('denied').hidden = which !== 'denied';
+    $('tabs').hidden = which !== 'app';
+    $('who').hidden = which !== 'app';
+    $('view-requests').hidden = true;
+    $('view-projects').hidden = true;
+  }
+
+  /* ---------------- tabs ---------------- */
+  document.querySelectorAll('#tabs button').forEach(function (b) {
+    b.addEventListener('click', function () { setView(b.dataset.view); });
+  });
+  function setView(v) {
+    state.view = v;
+    document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === v); });
+    $('view-requests').hidden = v !== 'requests';
+    $('view-projects').hidden = v !== 'projects';
+  }
+
+  /* ---------------- requests ---------------- */
+  async function loadRequests() {
+    var r = await sb.from('requests').select('*').order('created_at', { ascending: false }).limit(500);
+    if (r.error) { toast('Could not load requests: ' + r.error.message, 4000); return; }
+    state.requests = r.data || [];
+    renderRequests();
+  }
+  $('reqStatus').addEventListener('change', renderRequests);
+  $('reqSearch').addEventListener('input', renderRequests);
+
+  function renderRequests() {
+    var st = $('reqStatus').value, q = $('reqSearch').value.trim().toLowerCase();
+    var rows = state.requests.filter(function (x) {
+      if (st && x.status !== st) return false;
+      if (q && !(x.org + ' ' + x.name + ' ' + x.email).toLowerCase().includes(q)) return false;
+      return true;
+    });
+    $('reqCount').textContent = rows.length + ' of ' + state.requests.length;
+    $('reqEmpty').hidden = rows.length > 0;
+    $('reqRows').innerHTML = rows.map(function (x) {
+      return '<tr data-id="' + x.id + '"' + (state.req && state.req.id === x.id ? ' class="sel"' : '') + '>' +
+        '<td>' + esc(fmt(x.created_at)) + '</td>' +
+        '<td><b>' + esc(x.org) + '</b><span class="sub">' + esc(x.name) + ' · ' + esc(x.kind) + '</span></td>' +
+        '<td>' + esc(x.track) + '</td>' +
+        '<td><span class="pill ' + esc(x.status) + '">' + esc(x.status) + '</span></td></tr>';
+    }).join('');
+  }
+  $('reqRows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    openRequest(state.requests.find(function (x) { return x.id === tr.dataset.id; }));
+  });
+
+  function openRequest(x) {
+    state.req = x; renderRequests();
+    $('reqDetail').hidden = false;
+    $('rdOrg').textContent = x.org;
+    $('rdPill').textContent = x.status; $('rdPill').className = 'pill ' + x.status;
+    $('rdWhen').textContent = fmt(x.created_at);
+    $('rdKind').textContent = x.kind;
+    $('rdContact').innerHTML = esc(x.name) + ' · <a href="mailto:' + esc(x.email) + '">' + esc(x.email) + '</a>';
+    $('rdSite').innerHTML = x.site ? '<a href="' + esc(x.site) + '" target="_blank" rel="noopener">' + esc(x.site) + '</a>' : '<span class="muted">none</span>';
+    $('rdTrack').textContent = x.track;
+    var p = x.project_id ? state.projects.find(function (pp) { return pp.id === x.project_id; }) : null;
+    $('rdProject').innerHTML = p ? '<a href="#" data-open-project="' + p.id + '">' + esc(p.name) + '</a>' : '<span class="muted">not yet</span>';
+    $('rdProblem').textContent = x.problem;
+    $('rdStatus').value = x.status;
+    $('rdNotes').value = x.notes || '';
+    $('rdReply').href = 'mailto:' + encodeURIComponent(x.email) + '?subject=' + encodeURIComponent('Tri-Cities Board Concepts: ' + x.org);
+    $('rdMakeProject').disabled = !!p;
+    $('rdMakeProject').textContent = p ? 'Project exists' : 'Create project from this';
+  }
+  $('rdProject').addEventListener('click', function (e) {
+    var a = e.target.closest('[data-open-project]'); if (!a) return;
+    e.preventDefault(); setView('projects');
+    openProject(state.projects.find(function (p) { return p.id === a.dataset.openProject; }));
+  });
+  $('rdSave').addEventListener('click', async function () {
+    if (!state.req) return;
+    var patch = { status: $('rdStatus').value, notes: $('rdNotes').value.trim() || null };
+    var r = await sb.from('requests').update(patch).eq('id', state.req.id).select().single();
+    if (r.error) { toast('Save failed: ' + r.error.message, 4000); return; }
+    Object.assign(state.req, r.data); renderRequests(); openRequest(state.req); toast('Saved');
+  });
+  $('rdMakeProject').addEventListener('click', async function () {
+    var x = state.req; if (!x) return;
+    var slug = slugify(x.org);
+    var ins = {
+      slug: slug, name: x.org, org_name: x.org, org_type: x.kind, status: 'prospect',
+      track: TRACK_MAP[x.track] || 'undecided', current_url: x.site || null,
+      contact_name: x.name, contact_email: x.email, request_id: x.id,
+      summary: x.problem.length > 280 ? x.problem.slice(0, 277) + '…' : x.problem,
+    };
+    var r = await sb.from('projects').insert(ins).select().single();
+    if (r.error && /duplicate|unique/i.test(r.error.message)) {
+      ins.slug = slug + '-' + Math.random().toString(36).slice(2, 6);
+      r = await sb.from('projects').insert(ins).select().single();
+    }
+    if (r.error) { toast('Could not create project: ' + r.error.message, 4000); return; }
+    await sb.from('project_plans').insert({ project_id: r.data.id });
+    await sb.from('requests').update({ project_id: r.data.id, status: x.status === 'new' ? 'reviewing' : x.status }).eq('id', x.id);
+    await Promise.all([loadRequests(), loadProjects()]);
+    setView('projects'); openProject(state.projects.find(function (p) { return p.id === r.data.id; }));
+    toast('Project created');
+  });
+
+  /* ---------------- projects ---------------- */
+  async function loadProjects() {
+    var r = await sb.from('projects').select('*, project_plans(*)').order('updated_at', { ascending: false });
+    if (r.error) { toast('Could not load projects: ' + r.error.message, 4000); return; }
+    state.projects = (r.data || []).map(function (p) {
+      p.plan = Array.isArray(p.project_plans) ? (p.project_plans[0] || {}) : (p.project_plans || {});
+      delete p.project_plans; return p;
+    });
+    renderProjects();
+  }
+  function renderProjects() {
+    $('projEmpty').hidden = state.projects.length > 0;
+    $('projRows').innerHTML = state.projects.map(function (p) {
+      return '<tr data-id="' + p.id + '"' + (state.proj && state.proj.id === p.id ? ' class="sel"' : '') + '>' +
+        '<td><b>' + esc(p.name) + '</b><span class="sub">' + esc(p.org_name) + '</span></td>' +
+        '<td><span class="pill ' + esc(p.status) + '">' + esc(p.status.replace('_', ' ')) + '</span></td>' +
+        '<td>' + esc(p.track || '') + '</td>' +
+        '<td>' + esc(fmt(p.updated_at)) + '</td></tr>';
+    }).join('');
+  }
+  $('projRows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    openProject(state.projects.find(function (p) { return p.id === tr.dataset.id; }));
+  });
+  $('newProject').addEventListener('click', function () {
+    openProject({ id: null, name: '', slug: '', org_name: '', org_type: '', status: 'prospect', track: 'undecided', current_url: '', concept_url: '', contact_name: '', contact_email: '', summary: '', plan: {} });
+  });
+
+  function openProject(p) {
+    state.proj = p; renderProjects();
+    $('projDetail').hidden = false;
+    $('pdTitle').textContent = p.id ? p.name : 'New project';
+    $('pName').value = p.name || ''; $('pSlug').value = p.slug || '';
+    $('pOrg').value = p.org_name || ''; $('pType').value = p.org_type || '';
+    $('pStatus').value = p.status || 'prospect'; $('pTrack').value = p.track || 'undecided';
+    $('pContact').value = p.contact_name || ''; $('pEmail').value = p.contact_email || '';
+    $('pCurrent').value = p.current_url || ''; $('pConcept').value = p.concept_url || '';
+    $('pSummary').value = p.summary || '';
+    PLAN_KEYS.forEach(function (k) {
+      var sec = document.querySelector('.sec[data-key="' + k + '"]');
+      sec.querySelector('textarea').value = (p.plan && p.plan[k]) || '';
+      sec.querySelector('.md').hidden = true; sec.querySelector('textarea').hidden = false; sec.querySelector('.tg').textContent = 'Preview';
+    });
+    $('pConcept').oninput = syncLinks; syncLinks();
+    $('pMeta').textContent = p.id ? 'Updated ' + fmt(p.updated_at) : '';
+    $('pDelete').hidden = !p.id;
+    $('pdPlan').hidden = !p.id;
+    if (!p.id) $('pName').focus();
+  }
+  function syncLinks() {
+    var c = $('pConcept').value.trim();
+    $('pdConcept').hidden = !c; $('pdConcept').href = c || '#';
+    $('pdPlan').href = '/admin/plan.html?slug=' + encodeURIComponent($('pSlug').value.trim());
+  }
+  $('pName').addEventListener('input', function () { if (!state.proj.id && !$('pSlug').dataset.touched) $('pSlug').value = slugify(this.value); });
+  $('pSlug').addEventListener('input', function () { this.dataset.touched = '1'; syncLinks(); });
+
+  document.querySelectorAll('.sec .tg').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var sec = b.closest('.sec'), ta = sec.querySelector('textarea'), pv = sec.querySelector('.md');
+      var showing = !pv.hidden;
+      if (showing) { pv.hidden = true; ta.hidden = false; b.textContent = 'Preview'; }
+      else { pv.innerHTML = md(ta.value); pv.hidden = false; ta.hidden = true; b.textContent = 'Edit'; }
+    });
+  });
+
+  $('pSave').addEventListener('click', async function () {
+    var p = state.proj; if (!p) return;
+    var row = {
+      name: $('pName').value.trim(), slug: slugify($('pSlug').value.trim() || $('pName').value),
+      org_name: $('pOrg').value.trim() || $('pName').value.trim(), org_type: $('pType').value.trim() || null,
+      status: $('pStatus').value, track: $('pTrack').value,
+      contact_name: $('pContact').value.trim() || null, contact_email: $('pEmail').value.trim() || null,
+      current_url: $('pCurrent').value.trim() || null, concept_url: $('pConcept').value.trim() || null,
+      summary: $('pSummary').value.trim() || null,
+    };
+    if (!row.name) { toast('Give it a name first'); $('pName').focus(); return; }
+    var plan = {};
+    PLAN_KEYS.forEach(function (k) { plan[k] = document.querySelector('.sec[data-key="' + k + '"] textarea').value.trim() || null; });
+
+    this.disabled = true;
+    var r;
+    if (p.id) r = await sb.from('projects').update(row).eq('id', p.id).select().single();
+    else r = await sb.from('projects').insert(row).select().single();
+    if (r.error) { this.disabled = false; toast('Save failed: ' + r.error.message, 4500); return; }
+    plan.project_id = r.data.id;
+    var r2 = await sb.from('project_plans').upsert(plan, { onConflict: 'project_id' });
+    this.disabled = false;
+    if (r2.error) { toast('Plan save failed: ' + r2.error.message, 4500); return; }
+    await loadProjects();
+    openProject(state.projects.find(function (x) { return x.id === r.data.id; }));
+    toast('Saved');
+  });
+
+  $('pDelete').addEventListener('click', async function () {
+    var p = state.proj; if (!p || !p.id) return;
+    if (!confirm('Delete "' + p.name + '" and its plan? Requests linked to it are kept.')) return;
+    var r = await sb.from('projects').delete().eq('id', p.id);
+    if (r.error) { toast('Delete failed: ' + r.error.message, 4000); return; }
+    state.proj = null; $('projDetail').hidden = true;
+    await Promise.all([loadProjects(), loadRequests()]); toast('Deleted');
+  });
+
+  /* ---------------- start ---------------- */
+  sb.auth.getSession().then(function (r) { boot(r.data.session); });
+})();
+</script>
+</body>
+</html>

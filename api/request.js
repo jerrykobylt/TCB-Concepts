@@ -219,6 +219,9 @@ module.exports = async function handler(req, res) {
   const outreach = env('EMAIL_REPLY_TO_OUTREACH') || OUTREACH_DEFAULT;
   const when = new Date().toLocaleString('en-CA', { timeZone: 'America/Vancouver', dateStyle: 'medium', timeStyle: 'short' }) + ' PT';
 
+  // Archive first, so a mail outage never loses a request.
+  const row = await archiveRequest(fields);
+
   const internal = internalEmail(fields, { when });
   const notify = await sendViaResend({
     to: [outreach, admin],
@@ -229,7 +232,8 @@ module.exports = async function handler(req, res) {
 
   if (!notify.ok) {
     console.error('[concepts] notify failed:', notify.error);
-    return res.status(502).json({ ok: false, reason: 'send_failed' });
+    // The row is safe in the archive; tell the client so it can fall back.
+    return res.status(502).json({ ok: false, reason: 'send_failed', archived: row.ok });
   }
 
   // Confirmation to the requester. Best-effort: a failure here should not
@@ -243,5 +247,56 @@ module.exports = async function handler(req, res) {
   });
   if (!ack.ok) console.error('[concepts] confirmation failed:', ack.error);
 
-  return res.status(200).json({ ok: true, id: notify.id, confirmed: ack.ok });
+  if (row.ok && row.id) noteDelivery(row.id, notify.id, ack.ok);
+
+  return res.status(200).json({ ok: true, id: notify.id, confirmed: ack.ok, archived: row.ok });
 };
+
+/* ------------------------------------------------------------------------ */
+/* Archive: Supabase REST with the publishable key. RLS allows insert only. */
+/* ------------------------------------------------------------------------ */
+
+function supabase() {
+  const url = env('SUPABASE_URL');
+  const key = env('SUPABASE_PUBLISHABLE_KEY') || env('SUPABASE_ANON_KEY');
+  if (!url || !key) return null;
+  return { url: url.replace(/\/$/, ''), key };
+}
+
+async function archiveRequest(f) {
+  const sb = supabase();
+  if (!sb) {
+    console.error('[concepts] archive skipped: SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY not set');
+    return { ok: false };
+  }
+  try {
+    const res = await fetch(`${sb.url}/rest/v1/requests`, {
+      method: 'POST',
+      headers: {
+        apikey: sb.key,
+        Authorization: `Bearer ${sb.key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        org: f.org, kind: f.kind, name: f.name, email: f.email,
+        site: f.site || null, problem: f.problem, track: f.track,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[concepts] archive failed:', res.status, await res.text().catch(() => ''));
+      return { ok: false };
+    }
+    const data = await res.json().catch(() => []);
+    return { ok: true, id: Array.isArray(data) && data[0] ? data[0].id : null };
+  } catch (err) {
+    console.error('[concepts] archive error:', err && err.message);
+    return { ok: false };
+  }
+}
+
+// The publishable key may insert but never update, so delivery details are
+// logged rather than written back. The archive holds the request itself.
+function noteDelivery(id, resendId, confirmed) {
+  console.log('[concepts] archived', id, 'resend', resendId, 'confirmed', confirmed);
+}
