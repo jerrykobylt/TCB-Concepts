@@ -12,6 +12,7 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -20,7 +21,7 @@
   --sky:#0EA5E9; --amber:#F59E0B;
   --night:#111827; --night-2:#1F2937; --night-3:#0B1220;
   --ink:#111827; --steel:#6B7280;
-  --paper:#FFFFFF; --paper-2:#F9FAFB; --card:#FFFFFF; --line:#E5E7EB;
+  --paper:#FFFFFF; --paper-2:#F9FAFB; --tint:#F1F4F8; --card:#FFFFFF; --line:#E1E5EB;
   --shell:1368px;
   --display:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -29,14 +30,14 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --ink:#F3F4F6; --steel:#9CA3AF;
-  --paper:#0F1623; --paper-2:#0B1220; --card:#182233; --line:#26303F;
+  --paper:#111A29; --paper-2:#0B1220; --tint:#080D17; --card:#1A2536; --line:#26303F;
   --green-wash:#0C2A1A;
   --shadow-sm:0 1px 2px rgba(0,0,0,.5);
   --shadow:0 1px 3px rgba(0,0,0,.5),0 12px 34px rgba(0,0,0,.42);
 }}
 :root[data-theme="dark"]{
   --ink:#F3F4F6; --steel:#9CA3AF;
-  --paper:#0F1623; --paper-2:#0B1220; --card:#182233; --line:#26303F;
+  --paper:#111A29; --paper-2:#0B1220; --tint:#080D17; --card:#1A2536; --line:#26303F;
   --green-wash:#0C2A1A;
   --shadow-sm:0 1px 2px rgba(0,0,0,.5);
   --shadow:0 1px 3px rgba(0,0,0,.5),0 12px 34px rgba(0,0,0,.42);
@@ -86,13 +87,15 @@ header.site{position:sticky;top:0;z-index:100;background:rgba(17,24,39,.95);back
 .bar nav a.btn:hover{background:var(--green-dark)}
 
 /* ---------- hero ---------- */
-.hero{background:var(--night);color:#fff;position:relative;overflow:hidden;padding:86px 0 78px}
-.hero::before{content:"";position:absolute;inset:0;background:
-  radial-gradient(900px 420px at 12% -8%,rgba(22,163,74,.30),transparent 62%),
-  radial-gradient(760px 420px at 92% 8%,rgba(14,165,233,.20),transparent 60%);
-  pointer-events:none}
-.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,222,128,.45),transparent)}
-.hero .shell{position:relative;z-index:1}
+.hero{background:var(--night);color:#fff;position:relative;overflow:hidden;padding:96px 0 84px;min-height:560px;display:flex;align-items:center}
+/* Same mountain photo tricitiesboard.org uses for its hero. */
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;z-index:0}
+.hero::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:
+  linear-gradient(90deg,rgba(17,24,39,.94) 0%,rgba(17,24,39,.82) 42%,rgba(17,24,39,.42) 72%,rgba(17,24,39,.22) 100%),
+  linear-gradient(180deg,rgba(17,24,39,.55) 0%,rgba(17,24,39,0) 30%,rgba(17,24,39,0) 70%,rgba(17,24,39,.72) 100%),
+  radial-gradient(900px 420px at 12% -8%,rgba(22,163,74,.26),transparent 62%)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;z-index:2;background:linear-gradient(90deg,transparent,rgba(74,222,128,.45),transparent)}
+.hero .shell{position:relative;z-index:2;width:100%}
 .hero h1{font-size:clamp(36px,5.6vw,60px);font-weight:800;max-width:17ch;color:#fff}
 .hero .lede{font-size:clamp(17px,2vw,20px);color:#C7D0DC;max-width:60ch;margin:22px 0 0;line-height:1.55}
 .hero .lede b{color:#fff;font-weight:600}
@@ -102,7 +105,7 @@ header.site{position:sticky;top:0;z-index:100;background:rgba(17,24,39,.95);back
 
 /* ---------- section shell ---------- */
 section{padding:74px 0}
-section.tint{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+section.tint{background:var(--tint);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .head{max-width:62ch;margin-bottom:38px}
 .head h2{font-size:clamp(27px,3.7vw,40px)}
 .head p{color:var(--steel);font-size:17px;margin:14px 0 0}
@@ -251,7 +254,8 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
   .brand .wm b{font-size:15px}
   .bar nav{gap:2px}
   .btn.sm{padding:8px 13px;font-size:13.8px}
-  .hero{padding:58px 0 52px}
+  .hero{padding:64px 0 56px;min-height:0}
+  .hero-img{object-position:62% center}
   .hero .lede{font-size:16.6px}
   section{padding:52px 0}
   .closing{padding:52px 0}
@@ -304,6 +308,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 
   <!-- HERO -->
   <div class="hero on-dark">
+    <img class="hero-img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2400&h=1400&q=75" srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&h=900&q=70 1200w, https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2400&h=1400&q=75 2400w" sizes="100vw" alt="" fetchpriority="high" decoding="async">
     <div class="shell">
       <p class="eyebrow">A Tri-Cities Board initiative</p>
       <h1>We build the website your organization keeps putting off.</h1>
