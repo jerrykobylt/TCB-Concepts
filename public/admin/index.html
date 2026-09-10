@@ -54,7 +54,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn[disabled]{opacity:.55;cursor:default}
 label{font-family:var(--display);font-weight:600;font-size:13px;display:block;margin-bottom:5px}
 label small{color:var(--steel);font-weight:500;font-family:var(--body)}
-input[type=text],input[type=email],input[type=url],select,textarea{width:100%;background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink)}
+input[type=text],input[type=email],input[type=url],input[type=password],select,textarea{width:100%;background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
 textarea{min-height:110px;resize:vertical;line-height:1.55}
 textarea.plan{min-height:200px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
@@ -145,6 +145,7 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     </div>
     <div class="who" id="who" hidden>
       <span id="whoEmail"></span>
+      <button id="changepw">Password</button>
       <button id="signout">Sign out</button>
     </div>
   </div>
@@ -155,13 +156,40 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
   <!-- SIGN IN -->
   <div class="auth card" id="auth">
     <h1>Sign in</h1>
-    <p>We will email you a one-time link. Only Tri-Cities Board team addresses get in.</p>
+    <p>Tri-Cities Board team only.</p>
     <div class="field">
       <label for="email">Email</label>
-      <input type="email" id="email" placeholder="you@tricitiesboard.org" autocomplete="email">
+      <input type="email" id="email" placeholder="admin@tricitiesboard.org" autocomplete="username">
     </div>
-    <button class="btn" id="sendlink">Email me a sign-in link</button>
+    <div class="field" id="pwField">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="btn" id="signin">Sign in</button>
+    <p class="muted" style="margin:16px 0 0">
+      First time here, or forgot your password?
+      <a href="#" id="uselink">Email me a one-time link</a>. You can set a password once you are in.
+    </p>
     <div id="authmsg"></div>
+  </div>
+
+  <!-- SET PASSWORD (after first magic-link sign-in, or on request) -->
+  <div class="auth card" id="setpw" hidden>
+    <h1 id="setpwTitle">Set your password</h1>
+    <p>From now on you sign in with <b id="setpwEmail"></b> and this password. A one-time link still works if you ever forget it.</p>
+    <div class="field">
+      <label for="pw1">New password <small>at least 10 characters</small></label>
+      <input type="password" id="pw1" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label for="pw2">Again</label>
+      <input type="password" id="pw2" autocomplete="new-password">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="savepw">Save password</button>
+      <button class="btn ghost" id="skippw" hidden>Not now</button>
+    </div>
+    <div id="setpwmsg"></div>
   </div>
 
   <!-- NOT ALLOWED -->
@@ -286,7 +314,7 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
           <div class="field"><label for="pEmail">Contact email</label><input type="email" id="pEmail"></div>
           <div class="field"><label for="pCurrent">Current website</label><input type="url" id="pCurrent" placeholder="https://"></div>
         </div>
-        <div class="field"><label for="pConcept">Concept URL</label><input type="url" id="pConcept" placeholder="https://tcb-concepts.vercel.app/concepts/…"></div>
+        <div class="field"><label for="pConcept">Concept URL</label><input type="url" id="pConcept" placeholder="https://www.tcbconcepts.org/concepts/…"></div>
         <div class="field"><label for="pSummary">Summary <small>one paragraph, appears at the top of the plan</small></label><textarea id="pSummary"></textarea></div>
 
         <div id="fbBlock" hidden>
@@ -364,22 +392,65 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
   function md(s) { return s ? marked.parse(s, { breaks: true }) : '<p class="muted">Nothing written yet.</p>'; }
 
   /* ---------------- auth ---------------- */
-  $('sendlink').addEventListener('click', async function () {
-    var email = $('email').value.trim();
-    var box = $('authmsg');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { box.innerHTML = '<div class="msg err">That address does not look right.</div>'; return; }
-    this.disabled = true;
-    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin' } });
+  function msg(id, text, bad) { $(id).innerHTML = text ? '<div class="msg' + (bad ? ' err' : '') + '">' + esc(text) + '</div>' : ''; }
+  function validEmail(e) { return /^[^s@]+@[^s@]+.[^s@]{2,}$/.test(e); }
+
+  // Password sign-in: the everyday path.
+  $('signin').addEventListener('click', async function () {
+    var email = $('email').value.trim(), pw = $('password').value;
+    if (!validEmail(email)) { msg('authmsg', 'That address does not look right.', true); return; }
+    if (!pw) { msg('authmsg', 'Enter your password, or use the one-time link below.', true); return; }
+    this.disabled = true; msg('authmsg', '');
+    var r = await sb.auth.signInWithPassword({ email: email, password: pw });
     this.disabled = false;
-    box.innerHTML = r.error
-      ? '<div class="msg err">' + esc(r.error.message) + '</div>'
-      : '<div class="msg">Link sent to ' + esc(email) + '. Open it on this device.</div>';
+    if (r.error) msg('authmsg', /invalid/i.test(r.error.message) ? 'Wrong email or password. If you have not set a password yet, use the one-time link.' : r.error.message, true);
   });
-  $('email').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('sendlink').click(); });
+  $('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('signin').click(); });
+  $('email').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('password').focus(); });
+
+  // One-time link: first sign-in, or forgotten password.
+  $('uselink').addEventListener('click', async function (e) {
+    e.preventDefault();
+    var email = $('email').value.trim();
+    if (!validEmail(email)) { msg('authmsg', 'Enter your email first.', true); $('email').focus(); return; }
+    msg('authmsg', '');
+    var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + '/admin' } });
+    msg('authmsg', r.error ? r.error.message : 'Link sent to ' + email + '. Open it on this device, then set your password.', !!r.error);
+  });
+
+  // Set or change password. Shown automatically after a link sign-in until
+  // a password exists; reachable any time from the header.
+  $('savepw').addEventListener('click', async function () {
+    var a = $('pw1').value, b = $('pw2').value;
+    if (a.length < 10) { msg('setpwmsg', 'Make it at least 10 characters.', true); return; }
+    if (a !== b) { msg('setpwmsg', 'Those do not match.', true); return; }
+    this.disabled = true; msg('setpwmsg', '');
+    var r = await sb.auth.updateUser({ password: a, data: { password_set: true } });
+    this.disabled = false;
+    if (r.error) { msg('setpwmsg', r.error.message, true); return; }
+    $('pw1').value = ''; $('pw2').value = '';
+    state.user = r.data.user;
+    toast('Password saved');
+    enter();
+  });
+  $('skippw').addEventListener('click', function () { enter(); });
+  $('changepw').addEventListener('click', function () { openSetPassword(true); });
+
+  function openSetPassword(optional) {
+    $('setpwEmail').textContent = state.user.email;
+    $('setpwTitle').textContent = optional ? 'Change your password' : 'Set your password';
+    $('skippw').hidden = !optional;
+    show('setpw');
+    $('pw1').focus();
+  }
+
   $('signout').addEventListener('click', function () { sb.auth.signOut(); });
   $('signout2').addEventListener('click', function () { sb.auth.signOut(); });
 
-  sb.auth.onAuthStateChange(function (_ev, session) { boot(session); });
+  sb.auth.onAuthStateChange(function (ev, session) {
+    if (ev === 'PASSWORD_RECOVERY') return;   // handled by the set-password panel after boot
+    boot(session);
+  });
 
   async function boot(session) {
     state.user = session ? session.user : null;
@@ -387,6 +458,12 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
     var r = await sb.rpc('is_admin');
     state.isAdmin = !!r.data;
     if (!state.isAdmin) { $('deniedEmail').textContent = state.user.email; show('denied'); return; }
+    var hasPassword = !!(state.user.user_metadata && state.user.user_metadata.password_set);
+    if (!hasPassword) { openSetPassword(false); return; }
+    enter();
+  }
+
+  async function enter() {
     $('whoEmail').textContent = state.user.email;
     show('app');
     await Promise.all([loadRequests(), loadProjects()]);
@@ -395,6 +472,7 @@ td .sub{color:var(--steel);font-size:12.5px;display:block}
 
   function show(which) {
     $('auth').hidden = which !== 'auth';
+    $('setpw').hidden = which !== 'setpw';
     $('denied').hidden = which !== 'denied';
     $('tabs').hidden = which !== 'app';
     $('who').hidden = which !== 'app';

@@ -15,7 +15,7 @@
 const FROM_DEFAULT = 'Tri-Cities Board <noreply@tricitiesboard.org>';
 const ADMIN_DEFAULT = 'admin@tricitiesboard.org';
 const OUTREACH_DEFAULT = 'outreach@tricitiesboard.org';
-const SITE = 'https://tcb-concepts.vercel.app';
+const SITE = 'https://www.tcbconcepts.org';
 
 /**
  * Read an env var, ignoring the "[SENSITIVE]" placeholder that `vercel env

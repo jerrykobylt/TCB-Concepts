@@ -4,5 +4,5 @@
 window.TCB_ADMIN = {
   supabaseUrl: 'https://qtvckhdkkkghoayfwcih.supabase.co',
   supabaseKey: 'sb_publishable_QImCho9W6QORMPpH79PsNw_un7xaaks',
-  site: 'https://tcb-concepts.vercel.app',
+  site: 'https://www.tcbconcepts.org',
 };
