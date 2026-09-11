@@ -98,6 +98,10 @@ module.exports = async function handler(req, res) {
   const reqs = Array.isArray(p.requests) ? p.requests : [];
   const fb = await sbFetch(base, key, token, `/rest/v1/concept_feedback?project_slug=eq.${encodeURIComponent(slug)}&select=rating,feedback,created_at&order=created_at.desc&limit=100`);
   const feedback = fb.ok && Array.isArray(fb.data) ? fb.data : [];
+  // The newest site intelligence scan. This is what lets the pitch argue from
+  // what their site actually does rather than in generalities.
+  const sc = await sbFetch(base, key, token, `/rest/v1/site_scans?project_slug=eq.${encodeURIComponent(slug)}&select=host,url,report,signals,model,created_at&order=created_at.desc&limit=1`);
+  const scan = sc.ok && Array.isArray(sc.data) ? sc.data[0] : null;
 
   // Material for the model.
   const lines = [];
@@ -113,6 +117,37 @@ module.exports = async function handler(req, res) {
     lines.push(`From ${r.name} <${r.email}>, ${r.kind}, chose: ${r.track}${r.site ? ', site ' + r.site : ''}`);
     lines.push(`What is not working: ${r.problem}`);
     if (r.notes) lines.push(`Our internal notes: ${r.notes}`);
+  }
+  if (scan) {
+    const rep = scan.report || {}, sig = scan.signals || {}, sco = rep.scores || {};
+    lines.push(`\n## Site intelligence scan of ${scan.host} (${scan.created_at ? scan.created_at.slice(0, 10) : ''})`);
+    if (rep.summary) lines.push(`Summary: ${rep.summary}`);
+    const scoreBits = Object.entries(sco).filter(([, v]) => v).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`);
+    if (scoreBits.length) lines.push(`Scores — ${scoreBits.join('; ')}`);
+    if (Array.isArray(rep.stack) && rep.stack.length) {
+      lines.push(`Running on: ${rep.stack.map(t => t.name + (t.role ? ' (' + t.role + ')' : '')).join(', ')}`);
+    }
+    const measured = [];
+    if (sig.responseMs) measured.push(`${sig.responseMs} ms to first byte`);
+    if (sig.htmlBytes) measured.push(`${Math.round(sig.htmlBytes / 1024)} KB of HTML`);
+    measured.push(sig.viewportMeta ? 'has a mobile viewport' : 'NO mobile viewport');
+    measured.push(sig.https ? 'HTTPS' : 'NO HTTPS');
+    if (sig.largestNav) measured.push(`${sig.largestNav} links in its biggest menu`);
+    if (sig.pdfLinks) measured.push(`${sig.pdfLinks} PDF links`);
+    if (sig.imagesMissingAlt) measured.push(`${sig.imagesMissingAlt} images with no alt text`);
+    if (!sig.metaDescription) measured.push('no meta description');
+    if (sig.sitemap && sig.sitemap.present) measured.push(`sitemap with ${sig.sitemap.urls} URLs`);
+    lines.push(`Measured: ${measured.join(', ')}.`);
+    if (Array.isArray(rep.findings) && rep.findings.length) {
+      lines.push('Priority findings, worst first:');
+      rep.findings.slice(0, 8).forEach(f => lines.push(`- ${f.title}${f.impact ? ' [' + f.impact + ' impact]' : ''}: ${f.detail || ''}`));
+    }
+    if (Array.isArray(rep.preserve) && rep.preserve.length) lines.push(`Must keep working: ${rep.preserve.join(', ')}.`);
+    if (rep.approach) lines.push(`Suggested build approach: ${rep.approach}`);
+    if (Array.isArray(rep.pitch_angles) && rep.pitch_angles.length) {
+      lines.push('Angles the scan suggested:');
+      rep.pitch_angles.forEach(a => lines.push(`- ${a}`));
+    }
   }
   lines.push('\n## Plan sections as written so far');
   for (const [k, title] of SECTIONS) lines.push(`\n### ${title}\n${plan[k] ? plan[k] : '(empty)'}`);
@@ -137,7 +172,7 @@ module.exports = async function handler(req, res) {
     messages = [
       { role: 'system', content: VOICE + `\n\nYou are writing the proposal we hand to the organization. Structure, in this order, using these exact headings as markdown level-2 headings:
 1. A one-line title: "${p.org_name} — Website Proposal", then a single-sentence subtitle that says what we are proposing.
-2. "Where the site is today"
+2. "Where the site is today" — if the material carries a site intelligence scan, argue from its actual measurements and named platform rather than in generalities, and quote a couple of the concrete numbers. Never invent a number that is not in the material.
 3. "What we are proposing to build" (numbered sub-parts if there are distinct pieces)
 4. "What changes for you" (how it makes their life easier)
 5. "How this works" (the steps, numbered)
@@ -145,7 +180,8 @@ module.exports = async function handler(req, res) {
 7. "What we ask in return" (their commitments on Tri-Cities Board)
 8. If there is visitor poll feedback, "What people said about the concept" with the tally and two or three short quotes.
 9. A closing line signed "Tri-Cities Board · tricitiesboard.org".
-Length: 500 to 900 words. Bullets where the source used bullets.` },
+Length: 500 to 900 words. Bullets where the source used bullets.
+Write for the organization, not for us: no internal notes, no hedging about what the scan could not see.` },
       { role: 'user', content: `Material:\n\n${material}` },
     ];
   }
@@ -163,5 +199,6 @@ Length: 500 to 900 words. Bullets where the source used bullets.` },
     Object.keys(sections).forEach(k => { if (!allowed.has(k) || plan[k]) delete sections[k]; });
     return res.status(200).json({ ok: true, mode, model: out.model, sections });
   }
-  return res.status(200).json({ ok: true, mode, model: out.model, pitch: out.text.trim() });
+  return res.status(200).json({ ok: true, mode, model: out.model, pitch: out.text.trim(),
+    scan: scan ? { host: scan.host, created_at: scan.created_at } : null });
 };

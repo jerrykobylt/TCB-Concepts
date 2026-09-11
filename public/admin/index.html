@@ -710,6 +710,13 @@
     .publish .mono { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; }
     .publish .muted { font-size: .76rem; }
     .ai-lock { margin: 10px 0 0; font-size: .74rem; line-height: 1.45; color: rgba(255,255,255,.5); }
+    .ai-note { margin: 11px 0 0; font-size: .74rem; line-height: 1.45; color: rgba(255,255,255,.42); }
+    .scan-composer .chk { margin: 2px 0 4px; font-size: .8rem; }
+    .report-pitch { white-space: pre-wrap; font-size: .86rem; line-height: 1.62; }
+    .report-pitch h1, .report-pitch h2, .report-pitch h3 { font-family: var(--display); margin: 18px 0 7px; }
+    .report-pitch h2 { font-size: 1.02rem; }
+    .report-pitch p { margin: 0 0 10px; }
+    .report-pitch ul { margin: 0 0 10px; padding-left: 18px; }
     .files .rm { background: none; border: 0; color: var(--red); font-size: .8rem; cursor: pointer; }
 
     .tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -939,7 +946,7 @@
               <div class="sec" data-key="board_commitments"><div class="sh"><span class="n">6</span><h3>What we expect on the Board</h3><span class="hint">their commitments</span><button class="tg" type="button">Preview</button></div><div class="sb"><textarea></textarea><div class="rich" hidden></div></div></div>
             </div>
             <div class="pane" data-pane="pitch">
-              <p class="muted" style="margin:0 0 12px">The proposal we hand to the organization. Write it with AI from the panel on the right, then edit here.</p>
+              <p class="muted" style="margin:0 0 12px">The proposal we hand to the organization. Written in <button class="text-link" type="button" data-view-target="ai">AI Site Intel</button> from the scan of their existing site, then edited here.</p>
               <div class="sec" data-key="pitch"><div class="sh"><span class="n">P</span><h3>Pitch</h3><span class="hint" id="pitchMeta">markdown</span><button class="tg" type="button">Preview</button></div><div class="sb"><textarea id="pPitch" style="min-height:440px"></textarea><div class="rich" hidden></div></div></div>
             </div>
             <div class="pane" data-pane="scans"><div id="projScans"></div></div>
@@ -951,11 +958,11 @@
             <div class="ai-panel">
               <h2><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-spark"/></svg>Write with AI</h2>
               <p>Reads the request, your notes, every plan section, the latest site scan and the poll, then writes in the Board's voice. Nothing is saved until you press Save.</p>
-              <button class="btn btn-ai" type="button" id="aiPitch"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-spark"/></svg>Write the pitch</button>
-              <button class="btn btn-secondary" type="button" id="aiPlan">Draft empty plan sections</button>
+              <p class="ai-note">The pitch is written in AI Site Intel now, from the scan of their existing site.</p>
+              <button class="btn btn-ai" type="button" id="aiPlan"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-spark"/></svg>Draft empty plan sections</button>
               <button class="btn btn-secondary" type="button" id="aiScan">Scan their current site</button>
               <div class="st" id="aiMsg"></div>
-              <p class="ai-lock" id="aiLock" hidden>Publish the concept page first. The pitch and the plan are written from it.</p>
+              <p class="ai-lock" id="aiLock" hidden>Publish the concept page first. The plan is written from it.</p>
             </div>
             <article class="card"><div class="card-head"><div><h2>Request</h2></div></div><div class="card-body" id="pReq"><p class="muted">Not created from a request.</p></div></article>
             <article class="card"><div class="card-head"><div><h2>Danger</h2></div></div><div class="card-body"><button class="btn btn-danger btn-small" type="button" id="pDelete">Delete project</button><p class="muted" style="margin:8px 0 0">Removes the project, its plan, scans and poll answers. Requests are kept. Files in the bucket are not touched.</p></div></article>
@@ -971,9 +978,10 @@
             <div class="scan-hero"><span class="scan-orb"><svg class="icon" style="width:23px;height:23px" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-spark"/></svg></span><h2>Scan before you scope.</h2><p>Platform, structure, weight, mobile and SEO signals, then a written brief in the Board's voice.</p></div>
             <form class="scan-form" id="scanForm">
               <div class="field"><label for="scanUrl">Website URL</label><input id="scanUrl" type="url" placeholder="https://www.theirsite.com" required></div>
-              <div class="field"><label for="scanProject">Attach to project</label><select id="scanProject"><option value="">Unattached</option></select></div>
+              <div class="field"><label for="scanProject">Project</label><select id="scanProject"><option value="">Unattached</option></select></div>
+              <label class="chk"><input type="checkbox" id="scanPitch" checked> Write the sales pitch from the findings</label>
               <button class="btn btn-ai scan-submit" type="submit" id="scanGo"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-spark"/></svg>Run intelligence scan</button>
-              <p class="scan-note">Reads the public home page, robots and sitemap. Takes about thirty seconds.</p>
+              <p class="scan-note">Reads the public home page, robots and sitemap, then writes the brief. Pick a project and it writes the pitch too. About a minute.</p>
             </form>
             <div class="recent-scans"><h3>Recent scans</h3><div id="recentScans"></div></div>
           </article>

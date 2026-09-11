@@ -344,7 +344,7 @@
   // Plan and pitch are written from the published page, so they wait for it.
   function gateAI() {
     var locked = !state.pageLive;
-    ['aiPitch', 'aiPlan', 'aiScan'].forEach(function (id) { $(id).disabled = locked; });
+    ['aiPlan', 'aiScan'].forEach(function (id) { $(id).disabled = locked; });
     $('aiLock').hidden = !locked;
   }
   function guessType(n) { var e = (n.split('.').pop() || '').toLowerCase(); return { html: 'text/html', htm: 'text/html', css: 'text/css', js: 'text/javascript', json: 'application/json', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', ico: 'image/x-icon', woff: 'font/woff', woff2: 'font/woff2', pdf: 'application/pdf', mp4: 'video/mp4', txt: 'text/plain' }[e] || 'application/octet-stream'; }
@@ -419,13 +419,6 @@
     if (!r.ok || !d.ok) { toast(d.error || d.reason || 'AI request failed', 6000); return null; }
     return d;
   }
-  $('aiPitch').addEventListener('click', async function () {
-    if ($('pPitch').value.trim() && !confirm('Replace the current pitch with a fresh draft? Unsaved edits will be lost.')) return;
-    this.disabled = true; $('aiMsg').textContent = 'Writing… about twenty seconds.';
-    var d = await callAI('pitch'); this.disabled = false;
-    if (!d) { $('aiMsg').textContent = ''; return; }
-    $('pPitch').value = d.pitch; resetPreviews(); showPane('pitch'); $('aiMsg').textContent = 'Draft ready (' + d.model + '). Read, edit, Save.';
-  });
   $('aiPlan').addEventListener('click', async function () {
     var empty = PLAN_KEYS.filter(function (k) { return !document.querySelector('.sec[data-key="' + k + '"] textarea').value.trim(); });
     if (!empty.length) { toast('Every plan section already has text'); return; }
@@ -440,7 +433,9 @@
   /* ---------- AI: site scans ---------- */
   function fillScanProjects() { var sel = $('scanProject'), cur = sel.value; sel.innerHTML = '<option value="">Unattached</option>' + state.projects.map(function (p) { return '<option value="' + esc(p.slug) + '">' + esc(p.name) + '</option>'; }).join(''); sel.value = cur; }
   $('scanProject').addEventListener('change', function () { var p = state.projects.find(function (x) { return x.slug === $('scanProject').value; }); if (p && p.current_url && !$('scanUrl').value) $('scanUrl').value = p.current_url; });
-  var STEPS = [['Reading the site', 'Fetching the home page and measuring what is there…', 18], ['Checking robots and sitemap', 'How much of the site is public, and how it is organised…', 38], ['Identifying the platform', 'Matching signatures for builders, CMSs and sports systems…', 56], ['Writing the brief', 'The model is turning measurements into findings…', 82]];
+  var STEPS = [['Reading the site', 'Fetching the home page and measuring what is there…', 14], ['Checking robots and sitemap', 'How much of the site is public, and how it is organised…', 30], ['Identifying the platform', 'Matching signatures for builders, CMSs and sports systems…', 46], ['Writing the brief', 'The model is turning measurements into findings…', 64], ['Writing the pitch', 'Turning the findings into the proposal we hand over…', 86]];
+  // The pitch the last scan produced, held so the report can show it.
+  var lastPitch = null;
   $('scanForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var url = $('scanUrl').value.trim(); if (!url) return;
@@ -451,14 +446,55 @@
     var d = await r.json().catch(function () { return {}; });
     clearInterval(tick); $('scanGo').disabled = false; $('scanProgress').hidden = true;
     if (!r.ok || !d.ok) { $('scanEmpty').hidden = false; toast(d.error || d.reason || 'Scan failed', 7000); return; }
+    var slug = $('scanProject').value;
+    lastPitch = null;
+
+    // Site intel and the pitch are one job now: the proposal is argued from
+    // what the scan actually measured, so it follows straight on.
+    if (slug && $('scanPitch').checked) {
+      $('scanProgress').hidden = false;
+      $('scanTitle').textContent = STEPS[4][0]; $('scanCopy').textContent = STEPS[4][1]; $('scanFill').style.width = '86%';
+      var pr = await fetch('/api/pitch', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ slug: slug, mode: 'pitch' }) });
+      var pd = await pr.json().catch(function () { return {}; });
+      $('scanProgress').hidden = true;
+      if (!pr.ok || !pd.ok) toast('Scan saved, but the pitch failed: ' + (pd.error || pd.reason || 'unknown'), 7000);
+      else {
+        var had = state.projects.find(function (x) { return x.slug === slug; });
+        lastPitch = { slug: slug, text: pd.pitch, model: pd.model, saved: false };
+        // Only write over a pitch that is not there yet; an existing one is
+        // someone's edited copy, so replacing it stays a deliberate click.
+        if (had && !had.pitch) {
+          var up = await sb.from('projects').update({ pitch: pd.pitch, pitch_updated_at: new Date().toISOString() }).eq('slug', slug);
+          if (!up.error) { lastPitch.saved = true; await loadProjects(); }
+        }
+      }
+    }
+
     await loadScans(); renderRecentScans(); renderOverview();
     renderReport(state.scans.find(function (s) { return s.id === d.id; }) || d);
-    toast('Scan saved.');
+    toast(lastPitch ? (lastPitch.saved ? 'Scan and pitch saved.' : 'Scan saved. Pitch ready to review.') : 'Scan saved.');
   });
   function renderRecentScans() {
     $('recentScans').innerHTML = state.scans.length ? state.scans.slice(0, 8).map(function (s) { var p = state.projects.find(function (x) { return x.slug === s.project_slug; }); return '<button class="recent-scan" type="button" data-scan="' + s.id + '" style="width:100%;text-align:left;background:none;border:0;cursor:pointer">' + (p ? logo(p) : '<span class="project-logo grey">' + esc(initials(s.host)) + '</span>') + '<div><strong>' + esc(s.host) + '</strong><small>' + esc(ago(s.created_at)) + (p ? ' · ' + esc(p.name) : '') + '</small></div>' + status('', 'Ready') + '</button>'; }).join('') : '<p class="muted">No scans yet.</p>';
   }
   function scoreClass(v) { return /high|poor|large/i.test(v) ? 'warn' : /low|good|small/i.test(v) ? 'good' : ''; }
+  /* The proposal written from this scan. Fresh from the run that just
+     finished, or the project's saved one when an older report is reopened. */
+  function pitchSection(s, p) {
+    var fresh = lastPitch && p && lastPitch.slug === p.slug ? lastPitch : null;
+    var text = fresh ? fresh.text : (p && p.pitch) || '';
+    if (!p) return '<section class="report-section"><div class="report-section-head"><div><h3>Sales pitch</h3><p>Attach this scan to a project and the pitch is written from these findings.</p></div></div></section>';
+    if (!text) return '<section class="report-section"><div class="report-section-head"><div><h3>Sales pitch</h3><p>Not written yet. Re-run the scan for ' + esc(p.name) + ' with the pitch box ticked.</p></div></div></section>';
+    var note = fresh
+      ? (fresh.saved ? 'Written from this scan and saved to the project.' : 'Written from this scan. Not saved yet — the project already has a pitch.')
+      : 'The pitch saved on this project' + (p.pitch_updated_at ? ', ' + esc(fmt(p.pitch_updated_at)) : '') + '.';
+    return '<section class="report-section"><div class="report-section-head"><div><h3>Sales pitch</h3><p>' + note + '</p></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        (fresh && !fresh.saved ? '<button class="btn btn-primary btn-small" type="button" id="pitchSave">Replace the saved pitch</button>' : '') +
+        '<button class="btn btn-secondary btn-small" type="button" data-proj="' + p.id + '" data-pane="pitch">Open in the project</button>' +
+      '</div></div>' +
+      '<div class="report-pitch">' + md(text) + '</div></section>';
+  }
   function renderReport(s) {
     var rep = s.report || {}, sig = s.signals || {}, p = state.projects.find(function (x) { return x.slug === s.project_slug; });
     var sc = rep.scores || {};
@@ -478,8 +514,18 @@
         ((rep.preserve || []).length ? '<section class="report-section"><div class="report-section-head"><div><h3>Must keep working</h3><p>' + rep.preserve.map(esc).join(' · ') + '</p></div></div></section>' : '') +
         '<section class="report-section"><div class="report-section-head"><div><h3>Suggested build approach</h3><p>' + esc(rep.approach || '') + '</p></div></div></section>' +
         ((rep.pitch_angles || []).length ? '<section class="report-section"><div class="report-section-head"><div><h3>Pitch angles</h3></div></div>' + rep.pitch_angles.map(function (a, i) { return '<div class="angle"><span>' + (i + 1) + '</span><span>' + esc(a) + '</span></div>'; }).join('') + '</section>' : '') +
+        pitchSection(s, p) +
       '</div>';
     $('scanReport').hidden = false; $('scanEmpty').hidden = true;
+    var pSave = $('pitchSave');
+    if (pSave) pSave.addEventListener('click', async function () {
+      if (!lastPitch || !confirm('Replace the saved pitch for this project? The current one is lost.')) return;
+      this.disabled = true;
+      var up = await sb.from('projects').update({ pitch: lastPitch.text, pitch_updated_at: new Date().toISOString() }).eq('slug', lastPitch.slug);
+      this.disabled = false;
+      if (up.error) { toast('Could not save: ' + up.error.message, 5000); return; }
+      lastPitch.saved = true; await loadProjects(); renderAll(); renderReport(s); toast('Pitch saved to the project.');
+    });
     var toPlan = $('scanToPlan'); if (toPlan && p) toPlan.addEventListener('click', async function () {
       var text = reportToMarkdown(s);
       var cur = p.plan.current_stack;
