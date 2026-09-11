@@ -63,6 +63,12 @@
     '.tcb-poll{position:fixed;right:0;top:10px;bottom:10px;width:0;z-index:2147482999;pointer-events:none;',
       'font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#111827}',
     '.tcb-poll .tab,.tcb-poll .panel{pointer-events:auto}',
+    '.tcb-poll [hidden]{display:none!important}',
+    /* The widget is injected into whatever CSS a prospect's own site carries, so
+       generic class names collide. PoCo's own .skip is an off-screen
+       skip-to-content link, which dragged our "Skip this" button 9999px out of
+       view. Neutralise positioning leaks; rules below re-declare what they need. */
+    '.tcb-poll .panel *{position:static;left:auto;right:auto;top:auto;bottom:auto;float:none;max-width:none}',
 
     /* collapsed cue */
     '.tcb-poll .tab{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:9px;',
@@ -78,7 +84,8 @@
     '.tcb-poll .tab.cue{animation:tcb-cue .65s ease}',
 
     /* panel */
-    '.tcb-poll .panel{position:absolute;right:0;top:50%;width:344px;max-width:calc(100vw - 14px);max-height:100%;display:flex;flex-direction:column;',
+    '.tcb-poll .panel{position:absolute;right:0;top:50%;width:312px;max-width:calc(100vw - 56px);',
+      'height:100%;max-height:min(100%,600px);display:flex;flex-direction:column;',
       'background:#fff;border:1px solid #E5E7EB;border-right:0;border-radius:16px 0 0 16px;box-shadow:-14px 0 46px rgba(17,24,39,.26);overflow:hidden;',
       'transform:translate(100%,-50%);opacity:0;visibility:hidden;pointer-events:none;',
       'transition:transform .26s cubic-bezier(.22,.7,.1,1),opacity .2s,visibility .26s}',
@@ -89,22 +96,24 @@
     '.tcb-poll .ph b{font-family:Outfit,Inter,system-ui,sans-serif;font-size:15.5px;font-weight:700;display:block;line-height:1.2}',
     '.tcb-poll .x{margin-left:auto;background:none;border:0;color:#9CA3AF;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;flex:0 0 auto}',
     '.tcb-poll .x:hover{color:#fff}',
-    '.tcb-poll .pb{padding:14px 16px 16px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    '.tcb-poll .pb{padding:14px 16px 16px;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}',
+    '.tcb-poll .s1,.tcb-poll .s2{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}',
+    '.tcb-poll .s3{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}',
     '.tcb-poll .q{font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:14.5px;margin:0 0 8px;color:#111827}',
     '.tcb-poll .hint{color:#6B7280;font-size:12.5px;margin:0 0 10px}',
-    '.tcb-poll textarea{width:100%;min-height:96px;resize:vertical;font:inherit;font-size:14px;color:#111827;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 12px;line-height:1.5}',
+    '.tcb-poll textarea{width:100%;flex:1 1 auto;min-height:130px;resize:none;font:inherit;font-size:14px;color:#111827;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 12px;line-height:1.5}',
     '.tcb-poll textarea:focus{outline:none;border-color:#16A34A;background:#fff}',
-    '.tcb-poll .row{display:flex;gap:8px;margin-top:12px;align-items:center}',
+    '.tcb-poll .row{display:flex;gap:8px;margin-top:12px;align-items:center;flex:0 0 auto}',
     '.tcb-poll .btn{font:inherit;font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:14px;border:0;cursor:pointer;background:#16A34A;color:#fff;padding:10px 16px;border-radius:9px;display:inline-flex;align-items:center;gap:7px}',
     '.tcb-poll .btn:hover{background:#15803D}',
     '.tcb-poll .btn[disabled]{opacity:.55;cursor:default}',
     '.tcb-poll .skip{margin-left:auto;background:none;border:0;color:#6B7280;cursor:pointer;font:inherit;font-size:13px;padding:6px 4px}',
     '.tcb-poll .skip:hover{color:#111827;text-decoration:underline}',
-    '.tcb-poll .steps{display:flex;gap:5px;margin-bottom:12px}',
+    '.tcb-poll .steps{display:flex;gap:5px;margin-bottom:12px;flex:0 0 auto}',
     '.tcb-poll .steps i{height:4px;flex:1;border-radius:2px;background:#E5E7EB}',
     '.tcb-poll .steps i.on{background:#16A34A}',
-    '.tcb-poll .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}',
-    '.tcb-poll .opt{font:inherit;cursor:pointer;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:11px;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;transition:border-color .12s,background .12s}',
+    '.tcb-poll .opts{display:grid;grid-template-columns:1fr;grid-auto-rows:minmax(62px,1fr);gap:8px;flex:1 1 auto;min-height:0}',
+    '.tcb-poll .opt{font:inherit;cursor:pointer;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:11px;padding:12px 13px;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:3px;transition:border-color .12s,background .12s}',
     '.tcb-poll .opt b{font-family:Outfit,Inter,system-ui,sans-serif;font-size:14.5px;font-weight:700;color:#111827}',
     '.tcb-poll .opt span{font-size:12px;color:#6B7280;line-height:1.3}',
     '.tcb-poll .opt:hover{border-color:#9CA3AF;background:#fff}',
@@ -116,10 +125,9 @@
     '.tcb-poll .done b{font-family:Outfit,Inter,system-ui,sans-serif;font-size:16px;display:block;margin-bottom:6px}',
     '.tcb-poll .done p{color:#6B7280;font-size:13.5px;margin:0}',
     '.tcb-poll .done a{color:#16A34A;font-weight:600;text-decoration:none}',
-    '.tcb-poll .err{color:#B91C1C;font-size:12.5px;margin-top:8px}',
-    '.tcb-poll .hp{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden}',
+    '.tcb-poll .err{color:#B91C1C;font-size:12.5px;margin-top:8px;flex:0 0 auto}',
+    '.tcb-poll .hp{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px;height:1px;overflow:hidden}',
     '@media (max-width:560px){.tcb-poll .tab .vt{display:none}.tcb-poll .tab{gap:7px;padding:12px 9px;border-radius:11px 0 0 11px}}',
-    '@media (max-width:480px){.tcb-poll .panel{width:calc(100vw - 12px)}}',
     '@media (prefers-reduced-motion:reduce){.tcb-poll .panel,.tcb-poll .tab{transition:none}.tcb-poll .tab.cue{animation:none}}'
   ].join('');
 
