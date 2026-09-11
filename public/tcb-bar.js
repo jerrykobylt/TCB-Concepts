@@ -406,6 +406,12 @@
 
     document.body.appendChild(poll);
     railFit();
+
+    // Deep link. /concepts/<slug>#rate opens the slideout on arrival, so the
+    // admin's Feedback tab can point at the thing answers actually come from.
+    if (location.hash === '#rate' || /(^|[?&])rate=1(&|$)/.test(location.search)) {
+      setTimeout(open, 400);
+    }
     // Nudge: twitch the cue out from the edge once the visitor has had a real look.
     if (!answered) {
       var nudged = false;

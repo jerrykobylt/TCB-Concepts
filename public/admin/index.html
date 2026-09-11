@@ -704,6 +704,12 @@
     .drop.over { border-color: var(--green); background: var(--green-soft); }
     .drop a { color: var(--green-dark); font-weight: 700; }
     .files td:last-child { text-align: right; white-space: nowrap; }
+    .files tr.staged td { color: var(--muted); }
+    .publish { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .publish > div { flex: 1 1 220px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .publish .mono { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; }
+    .publish .muted { font-size: .76rem; }
+    .ai-lock { margin: 10px 0 0; font-size: .74rem; line-height: 1.45; color: rgba(255,255,255,.5); }
     .files .rm { background: none; border: 0; color: var(--red); font-size: .8rem; cursor: pointer; }
 
     .tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -902,7 +908,7 @@
         <div class="phero"><div class="shot" id="pThumb"></div><div class="pin"><div class="tags" id="pdTags"></div><div class="org" id="pdSummary"></div><div class="links" id="pdLinks"></div></div></div>
         <div class="two">
           <div>
-            <div class="tabs" id="ptabs"><button class="active" type="button" data-pane="overview">Overview</button><button type="button" data-pane="plan">Plan</button><button type="button" data-pane="pitch">Pitch</button><button type="button" data-pane="scans">Site intel</button><button type="button" data-pane="files">Files</button><button type="button" data-pane="feedback">Feedback</button></div>
+            <div class="tabs" id="ptabs"><button class="active" type="button" data-pane="overview">Overview</button><button type="button" data-pane="plan">Plan</button><button type="button" data-pane="pitch">Pitch</button><button type="button" data-pane="scans">Site intel</button><button type="button" data-pane="feedback">Feedback</button></div>
             <div class="pane active" data-pane="overview">
               <article class="card"><div class="card-head"><div><h2>Basics</h2></div></div><div class="card-body">
                 <div class="grid2"><div class="field"><label for="pName">Project name</label><input id="pName" placeholder="PoCo Pirates"></div><div class="field"><label for="pSlug">Slug</label><input id="pSlug" placeholder="poco-pirates"></div></div>
@@ -911,6 +917,11 @@
                 <div class="grid2"><div class="field"><label for="pContact">Contact</label><input id="pContact"></div><div class="field"><label for="pEmail">Contact email</label><input id="pEmail" type="email"></div></div>
                 <div class="grid2"><div class="field"><label for="pCurrent">Their current website</label><input id="pCurrent" type="url" placeholder="https://"></div><div class="field"><label for="pConcept">Concept URL</label><input id="pConcept" type="url" placeholder="https://www.tcbconcepts.org/concepts/…"></div></div>
                 <div class="field"><label for="pSummary">Summary</label><textarea id="pSummary" placeholder="One paragraph. Appears on the site card and at the top of the plan."></textarea></div>
+              </div></article>
+              <article class="card" style="margin-top:18px"><div class="card-head"><div><h2>Concept page</h2><p>Drop the built HTML in, settle the slug, publish it.</p></div><span id="pageTag"></span></div><div class="card-body">
+                <div class="drop" id="drop"><input type="file" id="fileIn" multiple hidden><input type="file" id="dirIn" webkitdirectory directory multiple hidden><div>Drop the concept's <b>HTML file</b> here, or <a href="#" id="pickFiles">choose a file</a> · <a href="#" id="pickDir">choose a folder</a>.</div><div class="muted" style="margin-top:4px">One HTML file becomes the page, whatever it is called. Drop a folder instead if it carries its own images or CSS. The Concepts bar and the feedback slideout are added for you.</div><div class="muted" id="dropMsg"></div></div>
+                <div id="fileList"></div>
+                <div class="publish"><div><span class="mono" id="filesUrl"></span><span class="muted" id="publishNote"></span></div><button class="btn btn-primary" type="button" id="pPublish"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-globe"/></svg>Publish to the site</button></div>
               </div></article>
               <article class="card" style="margin-top:18px"><div class="card-head"><div><h2>Card on tcbconcepts.org</h2><p>How it appears under "The work"</p></div></div><div class="card-body">
                 <label class="chk"><input type="checkbox" id="pListed"> Show on the landing page</label>
@@ -932,14 +943,8 @@
               <div class="sec" data-key="pitch"><div class="sh"><span class="n">P</span><h3>Pitch</h3><span class="hint" id="pitchMeta">markdown</span><button class="tg" type="button">Preview</button></div><div class="sb"><textarea id="pPitch" style="min-height:440px"></textarea><div class="rich" hidden></div></div></div>
             </div>
             <div class="pane" data-pane="scans"><div id="projScans"></div></div>
-            <div class="pane" data-pane="files">
-              <article class="card"><div class="card-head"><div><h2>Concept files</h2><p class="mono" id="filesUrl"></p></div></div><div class="card-body">
-                <div class="drop" id="drop"><input type="file" id="fileIn" multiple hidden><input type="file" id="dirIn" webkitdirectory directory multiple hidden><div>Drop the concept's files or a whole folder here, or <a href="#" id="pickFiles">choose files</a> · <a href="#" id="pickDir">choose a folder</a>.</div><div class="muted" style="margin-top:4px"><b>index.html</b> becomes the concept page. Same result as dropping into the Supabase bucket under this slug.</div><div class="muted" id="dropMsg"></div></div>
-                <div id="fileList"></div>
-              </div></article>
-            </div>
             <div class="pane" data-pane="feedback">
-              <article class="card"><div class="card-head"><div><h2>What visitors said</h2><p>From the poll on the concept page. Printed with the plan.</p></div></div><div class="card-body"><div class="tally" id="fbTally"></div><div id="fbList"></div></div></article>
+              <article class="card"><div class="card-head"><div><h2>What visitors said</h2><p>Straight from the feedback slideout on the concept page. Printed with the plan.</p></div><a class="btn btn-secondary btn-small" id="fbOpen" href="#" target="_blank" rel="noopener" hidden>Open the slideout <svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-external"/></svg></a></div><div class="card-body"><div class="tally" id="fbTally"></div><div id="fbList"></div></div></article>
             </div>
           </div>
           <div class="stack">
@@ -950,6 +955,7 @@
               <button class="btn btn-secondary" type="button" id="aiPlan">Draft empty plan sections</button>
               <button class="btn btn-secondary" type="button" id="aiScan">Scan their current site</button>
               <div class="st" id="aiMsg"></div>
+              <p class="ai-lock" id="aiLock" hidden>Publish the concept page first. The pitch and the plan are written from it.</p>
             </div>
             <article class="card"><div class="card-head"><div><h2>Request</h2></div></div><div class="card-body" id="pReq"><p class="muted">Not created from a request.</p></div></article>
             <article class="card"><div class="card-head"><div><h2>Danger</h2></div></div><div class="card-body"><button class="btn btn-danger btn-small" type="button" id="pDelete">Delete project</button><p class="muted" style="margin:8px 0 0">Removes the project, its plan, scans and poll answers. Requests are kept. Files in the bucket are not touched.</p></div></article>

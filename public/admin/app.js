@@ -213,33 +213,63 @@
     $('pdPlan').hidden = !p.id; $('pdPlan').href = '/admin/plan?slug=' + encodeURIComponent(p.slug || '');
     $('pdPitch').hidden = !p.id; $('pdPitch').href = '/admin/plan?slug=' + encodeURIComponent(p.slug || '') + '&doc=pitch';
     $('pDelete').hidden = !p.id; $('aiScan').hidden = !p.current_url;
-    $('filesUrl').textContent = p.id ? C.site + '/concepts/' + p.slug : '';
+    state.pending = []; state.pageLive = false;
     if (p.id) { loadFiles(p.slug); renderProjectFeedback(p.slug); renderProjectScans(p.slug); }
-    else { $('fileList').innerHTML = '<p class="muted">Save the project first, then add files.</p>'; $('fbTally').innerHTML = ''; $('fbList').innerHTML = '<p class="muted">No responses yet.</p>'; $('projScans').innerHTML = '<p class="muted">Save the project first.</p>'; }
+    else { renderPage(); $('fbTally').innerHTML = ''; $('fbList').innerHTML = '<p class="muted">No responses yet.</p>'; $('fbOpen').hidden = true; $('projScans').innerHTML = '<p class="muted">Publish the concept page first.</p>'; }
+    gateAI();
     var req = p.request_id ? state.requests.find(function (r) { return r.id === p.request_id; }) : null;
     $('pReq').innerHTML = req ? '<div class="quote">' + esc(req.problem) + '</div><p class="muted">' + esc(req.name) + ' · ' + esc(req.email) + ' · ' + esc(fmt(req.created_at)) + (req.notes ? '<br><br><b>Notes:</b> ' + esc(req.notes) : '') + '</p><button class="btn btn-secondary btn-small" type="button" style="margin-top:10px" data-req="' + req.id + '">Open request</button>' : '<p class="muted">Not created from a request.</p>';
     if (!p.id) $('pName').focus();
   }
-  $('pName').addEventListener('input', function () { if (!$('pSlug').dataset.touched) $('pSlug').value = slugify(this.value); });
-  $('pSlug').addEventListener('input', function () { this.dataset.touched = '1'; });
-  $('pSave').addEventListener('click', async function () {
+  $('pName').addEventListener('input', function () { if (!$('pSlug').dataset.touched) $('pSlug').value = slugify(this.value); renderPage(); });
+  $('pSlug').addEventListener('input', function () { this.dataset.touched = '1'; renderPage(); });
+
+  /* Save writes the fields and any staged files. Publish does that and puts
+     the concept on the site: card shown, stage moved on, concept URL filled. */
+  async function persist(pub) {
     var p = state.proj; if (!p) return;
+    var btn = pub ? $('pPublish') : $('pSave');
     var row = { name: $('pName').value.trim(), slug: slugify($('pSlug').value.trim() || $('pName').value), org_name: $('pOrg').value.trim() || $('pName').value.trim(), org_type: $('pType').value.trim() || null, status: $('pStatus').value, track: $('pTrack').value, sort: parseInt($('pSort').value, 10) || 100, contact_name: $('pContact').value.trim() || null, contact_email: $('pEmail').value.trim() || null, current_url: $('pCurrent').value.trim() || null, concept_url: $('pConcept').value.trim() || null, summary: $('pSummary').value.trim() || null, listed: $('pListed').checked, card_label: $('pLabel').value.trim() || null, card_bg: $('pBg').value.trim() || null, card_fg: $('pFg').value.trim() || null, tags: $('pTags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean) };
     if (!row.name) { toast('Give it a name first'); showPane('overview'); $('pName').focus(); return; }
+    if (!row.slug) { toast('Give it a slug first'); showPane('overview'); $('pSlug').focus(); return; }
+
+    var staged = state.pending || [];
+    if (pub) {
+      var hasPage = staged.some(function (f) { return f._rel === 'index.html'; }) || state.pageLive;
+      if (!hasPage) { toast('Drop the concept\'s HTML file in first', 4000); showPane('overview'); return; }
+      row.listed = true;
+      if (row.status === 'prospect') row.status = 'concept';
+      row.concept_url = C.site + '/concepts/' + row.slug;
+    }
+
     var newPitch = $('pPitch').value.trim() || null;
     if (newPitch !== (p.pitch || null)) { row.pitch = newPitch; row.pitch_updated_at = newPitch ? new Date().toISOString() : null; }
     var plan = {}; PLAN_KEYS.forEach(function (k) { plan[k] = document.querySelector('.sec[data-key="' + k + '"] textarea').value.trim() || null; });
-    this.disabled = true;
+
+    btn.disabled = true;
     var r = p.id ? await sb.from('projects').update(row).eq('id', p.id).select().single() : await sb.from('projects').insert(row).select().single();
-    if (r.error) { this.disabled = false; toast('Save failed: ' + r.error.message, 5000); return; }
+    if (r.error) { btn.disabled = false; toast('Save failed: ' + r.error.message, 5000); return; }
     plan.project_id = r.data.id;
     var r2 = await sb.from('project_plans').upsert(plan, { onConflict: 'project_id' });
-    this.disabled = false;
-    if (r2.error) { toast('Plan save failed: ' + r2.error.message, 5000); return; }
+    if (r2.error) { btn.disabled = false; toast('Plan save failed: ' + r2.error.message, 5000); return; }
+
+    // Upload after the row exists, so a failed upload never loses the project.
+    var up = staged.length ? await pushPending(r.data.slug) : { done: 0, failed: 0 };
+    btn.disabled = false;
+
     var pane = ($$('#ptabs button.active')[0] || { dataset: {} }).dataset.pane;
+    var leftover = state.pending || [];
     await loadProjects(); renderAll();
-    openProject(state.projects.find(function (x) { return x.id === r.data.id; }), pane); toast('Saved.');
-  });
+    openProject(state.projects.find(function (x) { return x.id === r.data.id; }), pane);
+    if (leftover.length) { state.pending = leftover; renderPage(); }
+
+    if (up.failed) toast(up.failed + ' file' + (up.failed === 1 ? '' : 's') + ' failed to upload. The project is saved.', 6000);
+    else if (pub) toast('Published. Live at ' + C.site + '/concepts/' + r.data.slug, 6000);
+    else toast(up.done ? 'Saved and ' + up.done + ' file' + (up.done === 1 ? '' : 's') + ' uploaded.' : 'Saved.');
+  }
+  $('pSave').addEventListener('click', function () { persist(false); });
+  $('pPublish').addEventListener('click', function () { persist(true); });
+
   $('pDelete').addEventListener('click', async function () {
     var p = state.proj; if (!p || !p.id) return;
     if (!confirm('Delete "' + p.name + '" and its plan? Requests are kept.')) return;
@@ -248,28 +278,112 @@
     await Promise.all([loadProjects(), loadRequests(), loadFeedback(), loadScans()]); renderAll(); go('projects'); toast('Deleted.');
   });
 
-  /* ---------- files ---------- */
+  /* ---------- the concept page ----------
+     Dropped files are held here, not uploaded on the spot, so the slug can
+     still change without orphaning a folder in the bucket under the old one.
+     Save writes them; Publish writes them and puts the concept on the site. */
+  var live = [];
+  // Storage listing can lag an upload we just made, and the AI gate reads it.
+  // Remember the slugs we have put a page under so publishing unlocks at once.
+  var published = {};
+
   async function loadFiles(slug) {
-    var box = $('fileList'); box.innerHTML = '<p class="muted">Loading…</p>'; var all = [];
-    async function walk(prefix) { var r = await sb.storage.from(BUCKET).list(prefix, { limit: 500 }); if (r.error) return; for (var i = 0; i < r.data.length; i++) { var e = r.data[i], path = prefix + '/' + e.name; if (e.id) all.push({ path: path, size: (e.metadata && e.metadata.size) || 0 }); else await walk(path); } }
+    $('fileList').innerHTML = '<p class="muted">Loading…</p>'; live = [];
+    async function walk(prefix) { var r = await sb.storage.from(BUCKET).list(prefix, { limit: 500 }); if (r.error) return; for (var i = 0; i < r.data.length; i++) { var e = r.data[i], path = prefix + '/' + e.name; if (e.id) live.push({ path: path, size: (e.metadata && e.metadata.size) || 0 }); else await walk(path); } }
     await walk(slug);
-    if (!all.length) { box.innerHTML = '<p class="muted">No files in the bucket for this slug.</p>'; return; }
-    box.innerHTML = '<table class="data-table files">' + all.map(function (f) { var rel = f.path.slice(slug.length + 1); return '<tr><td><span class="mono">' + esc(rel) + '</span>' + (rel === 'index.html' ? ' ' + status('', 'page') : '') + '</td><td class="mono">' + (f.size ? Math.round(f.size / 1024) + ' KB' : '') + '</td><td><button class="rm" type="button" data-path="' + esc(f.path) + '">Remove</button></td></tr>'; }).join('') + '</table>';
-    if (all.some(function (f) { return f.path === slug + '/index.html'; }) && !$('pConcept').value.trim()) $('pConcept').value = C.site + '/concepts/' + slug;
+    state.pageLive = published[slug] || live.some(function (f) { return f.path === slug + '/index.html'; });
+    if (state.pageLive && !$('pConcept').value.trim()) $('pConcept').value = C.site + '/concepts/' + slug;
+    renderPage(); gateAI();
   }
-  $('fileList').addEventListener('click', async function (e) { var b = e.target.closest('.rm'); if (!b) return; if (!confirm('Remove ' + b.dataset.path.split('/').slice(1).join('/') + '?')) return; var r = await sb.storage.from(BUCKET).remove([b.dataset.path]); if (r.error) { toast(r.error.message, 4000); return; } loadFiles(state.proj.slug); });
+
+  function renderPage() {
+    var p = state.proj || {}, slug = (p.id && p.slug) || slugify($('pSlug').value.trim() || $('pName').value);
+    var pend = state.pending || [];
+    var rows = live.map(function (f) { return { rel: f.path.slice(f.path.indexOf('/') + 1), kb: f.size ? Math.round(f.size / 1024) : 0, path: f.path }; })
+      .concat(pend.map(function (f) { return { rel: f._rel, kb: Math.round(f.size / 1024), staged: true }; }));
+
+    $('fileList').innerHTML = rows.length
+      ? '<table class="data-table files">' + rows.map(function (f) {
+          return '<tr' + (f.staged ? ' class="staged"' : '') + '><td><span class="mono">' + esc(f.rel) + '</span>' +
+            (f.rel === 'index.html' ? ' ' + status('', 'page') : '') +
+            (f.staged ? ' ' + status('amber', 'not published yet') : '') +
+            '</td><td class="mono">' + (f.kb ? f.kb + ' KB' : '') + '</td><td>' +
+            (f.staged ? '<button class="rm" type="button" data-drop="' + esc(f.rel) + '">Discard</button>'
+                      : '<button class="rm" type="button" data-path="' + esc(f.path) + '">Remove</button>') +
+            '</td></tr>';
+        }).join('') + '</table>'
+      : '<p class="muted">' + (p.id ? 'Nothing in the bucket for this slug yet.' : 'No page yet. Drop the HTML in above.') + '</p>';
+
+    var url = slug ? C.site + '/concepts/' + slug : '';
+    $('filesUrl').textContent = url;
+    $('pageTag').innerHTML = state.pageLive ? status('', 'live') : pend.length ? status('amber', 'ready to publish') : status('grey', 'no page');
+    $('publishNote').textContent = pend.length
+      ? pend.length + ' file' + (pend.length === 1 ? '' : 's') + ' waiting. Publish uploads them, shows the card on tcbconcepts.org and moves the stage on.'
+      : state.pageLive ? 'Live. Publishing again re-checks the card and the stage.'
+      : 'Drop an HTML file in to publish a page.';
+    $('pPublish').disabled = !pend.length && !state.pageLive;
+  }
+
+  $('fileList').addEventListener('click', async function (e) {
+    var b = e.target.closest('.rm'); if (!b) return;
+    if (b.dataset.drop) { state.pending = state.pending.filter(function (f) { return f._rel !== b.dataset.drop; }); renderPage(); return; }
+    if (!confirm('Remove ' + b.dataset.path.split('/').slice(1).join('/') + ' from the site?')) return;
+    var r = await sb.storage.from(BUCKET).remove([b.dataset.path]);
+    if (r.error) { toast(r.error.message, 4000); return; }
+    loadFiles(state.proj.slug);
+  });
+
+  // Plan and pitch are written from the published page, so they wait for it.
+  function gateAI() {
+    var locked = !state.pageLive;
+    ['aiPitch', 'aiPlan', 'aiScan'].forEach(function (id) { $(id).disabled = locked; });
+    $('aiLock').hidden = !locked;
+  }
   function guessType(n) { var e = (n.split('.').pop() || '').toLowerCase(); return { html: 'text/html', htm: 'text/html', css: 'text/css', js: 'text/javascript', json: 'application/json', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', ico: 'image/x-icon', woff: 'font/woff', woff2: 'font/woff2', pdf: 'application/pdf', mp4: 'video/mp4', txt: 'text/plain' }[e] || 'application/octet-stream'; }
-  async function uploadFiles(files) {
-    var p = state.proj; if (!p || !p.id) { toast('Save the project first'); return; }
-    var list = Array.prototype.slice.call(files).filter(function (f) { return f.size > 0; }); if (!list.length) return;
+  /* Hold dropped files until Save or Publish. A lone HTML file becomes the
+     page whatever it is called, so "drop the HTML in" is the whole job. */
+  function stage(files) {
+    var list = Array.prototype.slice.call(files).filter(function (f) { return f.size > 0; });
+    if (!list.length) return;
+    list.forEach(function (f) {
+      var rel = f._rel || f.webkitRelativePath || f.name;
+      if (!f._rel && f.webkitRelativePath && rel.indexOf('/') > -1) rel = rel.split('/').slice(1).join('/');
+      f._rel = rel;
+    });
+    var htmls = list.filter(function (f) { return /\.html?$/i.test(f._rel); });
+    if (list.length === 1 && htmls.length === 1) list[0]._rel = 'index.html';
+    else if (htmls.length === 1 && !htmls.some(function (f) { return f._rel === 'index.html'; }) && htmls[0]._rel.indexOf('/') < 0) htmls[0]._rel = 'index.html';
+
+    state.pending = (state.pending || []).filter(function (o) { return !list.some(function (f) { return f._rel === o._rel; }); }).concat(list);
+    var named = list.map(function (f) { return f._rel; });
+    $('dropMsg').textContent = named.length > 3
+      ? named.length + ' files ready: ' + named.slice(0, 3).join(', ') + '…'
+      : 'Ready: ' + named.join(', ');
+    if (!$('pName').value.trim() && htmls.length) {
+      var t = null;
+      htmls[0].text().then(function (txt) { t = (txt.match(/<title>([^<]*)<\/title>/i) || [])[1]; if (t && !$('pName').value.trim()) { $('pName').value = t.trim().split(/\s[—–|-]\s/)[0]; $('pName').dispatchEvent(new Event('input')); } });
+    }
+    renderPage();
+  }
+
+  async function pushPending(slug) {
+    var list = state.pending || []; if (!list.length) return { done: 0, failed: 0 };
     var m = $('dropMsg'), done = 0, failed = 0;
-    for (var i = 0; i < list.length; i++) { var f = list[i], rel = f._rel || f.webkitRelativePath || f.name; if (!f._rel && f.webkitRelativePath && rel.indexOf('/') > -1) rel = rel.split('/').slice(1).join('/'); m.textContent = 'Uploading ' + (i + 1) + ' of ' + list.length + ': ' + rel; var r = await sb.storage.from(BUCKET).upload(p.slug + '/' + rel, f, { upsert: true, contentType: guessType(f.name), cacheControl: '60' }); if (r.error) failed++; else done++; }
-    m.textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.'; loadFiles(p.slug);
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      m.textContent = 'Uploading ' + (i + 1) + ' of ' + list.length + ': ' + f._rel;
+      var r = await sb.storage.from(BUCKET).upload(slug + '/' + f._rel, f, { upsert: true, contentType: guessType(f._rel), cacheControl: '60' });
+      if (r.error) { failed++; toast(f._rel + ': ' + r.error.message, 5000); }
+      else { done++; if (f._rel === 'index.html') published[slug] = true; }
+    }
+    m.textContent = done + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.';
+    if (!failed) state.pending = [];
+    return { done: done, failed: failed };
   }
   $('pickFiles').addEventListener('click', function (e) { e.preventDefault(); $('fileIn').click(); });
   $('pickDir').addEventListener('click', function (e) { e.preventDefault(); $('dirIn').click(); });
-  $('fileIn').addEventListener('change', function () { uploadFiles(this.files); this.value = ''; });
-  $('dirIn').addEventListener('change', function () { uploadFiles(this.files); this.value = ''; });
+  $('fileIn').addEventListener('change', function () { stage(this.files); this.value = ''; });
+  $('dirIn').addEventListener('change', function () { stage(this.files); this.value = ''; });
   (function () {
     var d = $('drop');
     ['dragenter','dragover'].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.add('over'); }); });
@@ -283,8 +397,8 @@
         var single = entries.length === 1 && entries[0].isDirectory;
         for (var j = 0; j < entries.length; j++) await read(entries[j], '');
         if (single) out.forEach(function (f) { f._rel = f._rel.split('/').slice(1).join('/'); });
-        uploadFiles(out);
-      } else uploadFiles(e.dataTransfer.files);
+        stage(out);
+      } else stage(e.dataTransfer.files);
     });
   })();
 
@@ -403,6 +517,9 @@
   /* ---------- project feedback ---------- */
   function renderProjectFeedback(slug) {
     var rows = state.feedback.filter(function (f) { return f.project_slug === slug; });
+    // Point straight at the slideout these answers come from: #rate opens it.
+    $('fbOpen').href = C.site + '/concepts/' + slug + '#rate';
+    $('fbOpen').hidden = !slug;
     $('fbTally').innerHTML = tallyHTML(rows);
     var wt = rows.filter(function (x) { return x.feedback; });
     $('fbList').innerHTML = rows.length === 0 ? '<p class="muted">No responses yet.</p>' : (wt.length ? wt.map(function (x) { return '<div class="fb ' + esc(x.rating) + '"><div class="m">' + esc(x.rating) + ' · ' + esc(fmt(x.created_at)) + '</div><p>' + esc(x.feedback) + '</p></div>'; }).join('') : '<p class="muted">' + rows.length + ' rating' + (rows.length === 1 ? '' : 's') + ', no written comments yet.</p>');
