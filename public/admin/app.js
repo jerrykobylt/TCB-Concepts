@@ -213,7 +213,7 @@
     $('pdPlan').hidden = !p.id; $('pdPlan').href = '/admin/plan?slug=' + encodeURIComponent(p.slug || '');
     $('pdPitch').hidden = !p.id; $('pdPitch').href = '/admin/plan?slug=' + encodeURIComponent(p.slug || '') + '&doc=pitch';
     $('pDelete').hidden = !p.id; $('aiScan').hidden = !p.current_url;
-    state.pending = []; state.pageLive = false;
+    state.pending = []; state.pageLive = false; state.inBucket = false;
     if (p.id) { loadFiles(p.slug); renderProjectFeedback(p.slug); renderProjectScans(p.slug); }
     else { renderPage(); $('fbTally').innerHTML = ''; $('fbList').innerHTML = '<p class="muted">No responses yet.</p>'; $('fbOpen').hidden = true; $('projScans').innerHTML = '<p class="muted">Publish the concept page first.</p>'; }
     gateAI();
@@ -291,7 +291,12 @@
     $('fileList').innerHTML = '<p class="muted">Loading…</p>'; live = [];
     async function walk(prefix) { var r = await sb.storage.from(BUCKET).list(prefix, { limit: 500 }); if (r.error) return; for (var i = 0; i < r.data.length; i++) { var e = r.data[i], path = prefix + '/' + e.name; if (e.id) live.push({ path: path, size: (e.metadata && e.metadata.size) || 0 }); else await walk(path); } }
     await walk(slug);
-    state.pageLive = published[slug] || live.some(function (f) { return f.path === slug + '/index.html'; });
+    // A concept can also be a page committed under public/concepts/<slug>/,
+    // which Vercel serves ahead of the bucket and which never shows up in a
+    // bucket listing. An existing concept URL counts as a published page too,
+    // or the AI would sit locked on a concept that is plainly live.
+    state.inBucket = live.some(function (f) { return f.path === slug + '/index.html'; });
+    state.pageLive = published[slug] || state.inBucket || !!(state.proj && state.proj.concept_url);
     if (state.pageLive && !$('pConcept').value.trim()) $('pConcept').value = C.site + '/concepts/' + slug;
     renderPage(); gateAI();
   }
@@ -312,13 +317,16 @@
                       : '<button class="rm" type="button" data-path="' + esc(f.path) + '">Remove</button>') +
             '</td></tr>';
         }).join('') + '</table>'
-      : '<p class="muted">' + (p.id ? 'Nothing in the bucket for this slug yet.' : 'No page yet. Drop the HTML in above.') + '</p>';
+      : '<p class="muted">' + (state.pageLive ? 'Live, but not from the bucket. This page is committed at public/concepts/' + esc(slug) + '/ and Vercel serves that ahead of anything dropped here.'
+          : p.id ? 'Nothing in the bucket for this slug yet.' : 'No page yet. Drop the HTML in above.') + '</p>';
 
     var url = slug ? C.site + '/concepts/' + slug : '';
     $('filesUrl').textContent = url;
     $('pageTag').innerHTML = state.pageLive ? status('', 'live') : pend.length ? status('amber', 'ready to publish') : status('grey', 'no page');
+    var shadowed = state.pageLive && !state.inBucket && p.id;
     $('publishNote').textContent = pend.length
       ? pend.length + ' file' + (pend.length === 1 ? '' : 's') + ' waiting. Publish uploads them, shows the card on tcbconcepts.org and moves the stage on.'
+        + (shadowed ? ' The committed page at public/concepts/' + slug + '/ has to go before this one shows.' : '')
       : state.pageLive ? 'Live. Publishing again re-checks the card and the stage.'
       : 'Drop an HTML file in to publish a page.';
     $('pPublish').disabled = !pend.length && !state.pageLive;
