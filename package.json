@@ -1,0 +1,9 @@
+{
+  "name": "tcb-concepts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Staging and showcase site for Tri-Cities Board. Static pages plus Vercel functions, no build step.",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}

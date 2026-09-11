@@ -57,3 +57,9 @@ vercel --prod
   real website.
 - No build step and no framework. Concepts are plain HTML so they stay portable and can
   be handed to a client as-is.
+- Vercel Web Analytics is wired with a plain script tag: `/_vercel/insights/script.js` on
+  the landing page, and injected by `tcb-bar.js` on every concept page, since concepts are
+  dropped in as finished HTML and would not carry it themselves. It has to be enabled on
+  the Vercel project or that path 404s. `@vercel/analytics` is in `package.json` for
+  reference, but nothing imports it — with no bundler its `inject()` would only add the
+  same tag. There is still nothing to install or build to deploy this repo.
