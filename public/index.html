@@ -125,6 +125,9 @@ section.tint{background:var(--tint);border-top:1px solid var(--line);border-bott
 a.proj:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:transparent}
 .crest{height:126px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:0 22px;font-family:var(--display);font-weight:800;font-size:20px;line-height:1.13;letter-spacing:-.015em}
 .crest.pirates{background:linear-gradient(140deg,#2A1145 0%,#52247F 100%);color:#FFC629}
+.crest .mark{height:54px;width:auto;max-width:62%;margin-bottom:9px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.28))}
+.proj.feat .crest .mark{height:70px;margin-bottom:11px}
+.crest.auto{background:linear-gradient(140deg,#15171C 0%,#2C323E 100%);color:#fff}
 .crest.pending{background:var(--paper-2);color:var(--steel);font-size:16.5px;font-weight:600;border-bottom:1px dashed var(--line);
   background-image:repeating-linear-gradient(135deg,transparent,transparent 9px,rgba(107,114,128,.09) 9px,rgba(107,114,128,.09) 18px)}
 .crest small{font-family:var(--body);font-size:10.5px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;opacity:.72}
@@ -354,6 +357,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
              no-JavaScript fallback and is replaced once listings load. -->
         <a class="proj feat" href="/concepts/poco-pirates/" data-static>
           <div class="crest" style="background:linear-gradient(140deg,#2A1145 0%,#52247F 100%);color:#FFC629">
+            <img class="mark" src="/api/logo?slug=poco-pirates" alt="" loading="lazy" decoding="async" onerror="this.remove()">
             <small>Est. 1974</small>
             Port Coquitlam<br>Minor Hockey
           </div>
@@ -749,11 +753,19 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   }
   function card(it, featured) {
     var st = stateOf(it);
+    // A concept always gets a proper header. Without a crest colour set in the
+    // admin it takes the house dark, which the org's own logo sits well on.
     var crest = it.bg
       ? '<div class="crest" style="background:' + esc(it.bg) + ';color:' + esc(it.fg || '#fff') + '">'
-      : '<div class="crest pending">';
+      : it.live
+        ? '<div class="crest auto">'
+        : '<div class="crest pending">';
+    // Dropped if it fails to load, leaving the lettering the card always had.
+    var mark = it.logo
+      ? '<img class="mark" src="' + esc(it.logo) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">'
+      : '';
     var title = esc(it.org || it.name).replace(/ (Minor|Chamber|Network|Association|Society|Club|of) /, ' $1<br>');
-    var inner = crest + (it.label ? '<small>' + esc(it.label) + '</small>' : '') + title + '</div>' +
+    var inner = crest + mark + (it.label ? '<small>' + esc(it.label) + '</small>' : '') + title + '</div>' +
       '<div class="in">' +
         '<div class="kind">' + esc(it.kind || 'Organization') + '</div>' +
         '<h3>' + esc(it.name) + '</h3>' +

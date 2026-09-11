@@ -53,6 +53,9 @@ module.exports = async function handler(req, res) {
     url: r.concept_url || (folders.includes(r.slug) ? `/concepts/${r.slug}/` : null),
     current: r.current_url || null,
     live: !!(r.concept_url || folders.includes(r.slug)),
+    // Read out of the concept's own header, so a card gets the org's mark
+    // without anyone uploading one. 404s harmlessly if there is no page yet.
+    logo: r.concept_url || folders.includes(r.slug) ? `/api/logo?slug=${encodeURIComponent(r.slug)}` : null,
   }));
 
   for (const f of folders) {
@@ -60,6 +63,7 @@ module.exports = async function handler(req, res) {
     items.push({
       slug: f, name: humanize(f), org: humanize(f), kind: '', status: 'concept', summary: '',
       tags: [], label: 'New concept', bg: '', fg: '', url: `/concepts/${f}/`, current: null, live: true,
+      logo: `/api/logo?slug=${encodeURIComponent(f)}`,
     });
   }
 
