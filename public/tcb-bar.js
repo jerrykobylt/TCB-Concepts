@@ -426,7 +426,21 @@
     }
   }
 
+  /* Vercel Web Analytics. Concept pages are dropped in as finished HTML and
+     served either from the repo or the bucket, so none of them carry the tag
+     themselves; the bar is the one thing they all load. Skipped if the page
+     already has it, so a concept that ships its own is not counted twice. */
+  function analytics() {
+    if (window.vaq || document.querySelector('script[src*="/_vercel/insights/"]')) return;
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = '/_vercel/insights/script.js';
+    document.head.appendChild(s);
+  }
+
   function mount() {
+    analytics();
     document.body.insertBefore(bar, document.body.firstChild);
     offset();
     buildPoll();

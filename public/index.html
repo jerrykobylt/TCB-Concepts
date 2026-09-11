@@ -938,5 +938,10 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   });
 })();
 </script>
+<!-- Vercel Web Analytics. Plain script tag because this site has no framework
+     and no build step, so the @vercel/analytics package cannot run here. The
+     queue shim lets custom events be pushed before the script lands. -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
