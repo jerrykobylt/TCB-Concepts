@@ -11,10 +11,14 @@
  *
  * It prepends a slim, sticky Tri-Cities Board bar above the concept's own
  * header (naming the concept, linking to the existing site, back to the
- * showcase, and straight to the inquiry form), and adds a slide-out poll in
- * the bottom right that asks what the visitor likes or does not like, then
- * how the concept compares to the existing site. Answers go to /api/poll
- * and are tied to the project by slug.
+ * showcase, and straight to the inquiry form), and adds a poll that slides
+ * out from the right edge, collapsed to a small arrow cue, asking what the
+ * visitor likes or does not like, then how the concept compares to the
+ * existing site. Answers go to /api/poll and are tied to the project by slug.
+ *
+ * The poll lives on a rail whose top and bottom are measured from the
+ * concept's own sticky header and any fixed bottom navigation, so neither the
+ * cue nor the open panel ever sits on top of the site's own controls.
  */
 (function () {
   var me = document.currentScript;
@@ -52,21 +56,40 @@
     '@media (max-width:760px){.tcb-bar .in{height:46px;padding:0 12px;gap:10px}.tcb-bar .which{display:none}.tcb-bar .sep{display:none}.tcb-bar .lnk.all{display:none}.tcb-bar .lnk.cur span{display:none}}',
     '@media (max-width:400px){.tcb-bar .wm b{font-size:12.5px}.tcb-bar .ask{padding:8px 11px;font-size:13px}}',
 
-    /* ---- poll ---- */
-    '.tcb-poll{position:fixed;right:18px;bottom:18px;z-index:2147482999;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#111827}',
-    '.tcb-poll .tab{display:inline-flex;align-items:center;gap:8px;background:#111827;color:#fff;border:0;cursor:pointer;font:inherit;font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:13.5px;padding:11px 15px;border-radius:999px;box-shadow:0 8px 24px rgba(17,24,39,.32);transition:transform .15s,background .15s}',
-    '.tcb-poll .tab:hover{background:#1F2937;transform:translateY(-1px)}',
-    '.tcb-poll .tab .dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.25)}',
-    '.tcb-poll .panel{position:absolute;right:0;bottom:0;width:340px;max-width:calc(100vw - 36px);background:#fff;border:1px solid #E5E7EB;border-radius:16px;box-shadow:0 18px 50px rgba(17,24,39,.28);overflow:hidden;',
-      'opacity:0;transform:translateY(14px) scale(.98);pointer-events:none;transition:opacity .18s,transform .18s}',
-    '.tcb-poll.open .panel{opacity:1;transform:none;pointer-events:auto}',
-    '.tcb-poll.open .tab{opacity:0;pointer-events:none}',
-    '.tcb-poll .ph{background:#111827;color:#fff;padding:14px 16px 13px;display:flex;align-items:flex-start;gap:10px}',
+    /* ---- poll: slides out from the right edge ---- */
+    /* A zero-width rail pinned to the right edge. JS sets its top and bottom to
+       the space the concept's own sticky header and fixed bottom nav leave over,
+       so the cue and the open panel both stay clear of them. */
+    '.tcb-poll{position:fixed;right:0;top:10px;bottom:10px;width:0;z-index:2147482999;pointer-events:none;',
+      'font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#111827}',
+    '.tcb-poll .tab,.tcb-poll .panel{pointer-events:auto}',
+
+    /* collapsed cue */
+    '.tcb-poll .tab{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:9px;',
+      'background:#111827;color:#fff;border:1px solid rgba(255,255,255,.18);border-right:0;cursor:pointer;font:inherit;',
+      'font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:11.5px;',
+      'letter-spacing:.1em;text-transform:uppercase;padding:15px 8px 14px;border-radius:12px 0 0 12px;box-shadow:-5px 0 20px rgba(17,24,39,.3);',
+      'transition:transform .18s,background .15s,opacity .18s}',
+    '.tcb-poll .tab:hover{background:#1F2937;transform:translateY(-50%) translateX(-4px)}',
+    '.tcb-poll .tab .vt{writing-mode:vertical-rl;text-orientation:mixed}',
+    '.tcb-poll .tab .arw{width:13px;height:13px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}',
+    '.tcb-poll .tab .dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.22);flex:0 0 auto}',
+    '@keyframes tcb-cue{0%,100%{transform:translateY(-50%)}35%{transform:translateY(-50%) translateX(-9px)}70%{transform:translateY(-50%) translateX(-2px)}}',
+    '.tcb-poll .tab.cue{animation:tcb-cue .65s ease}',
+
+    /* panel */
+    '.tcb-poll .panel{position:absolute;right:0;top:50%;width:344px;max-width:calc(100vw - 14px);max-height:100%;display:flex;flex-direction:column;',
+      'background:#fff;border:1px solid #E5E7EB;border-right:0;border-radius:16px 0 0 16px;box-shadow:-14px 0 46px rgba(17,24,39,.26);overflow:hidden;',
+      'transform:translate(100%,-50%);opacity:0;visibility:hidden;pointer-events:none;',
+      'transition:transform .26s cubic-bezier(.22,.7,.1,1),opacity .2s,visibility .26s}',
+    '.tcb-poll.open .panel{transform:translate(0,-50%);opacity:1;visibility:visible;pointer-events:auto}',
+    '.tcb-poll.open .tab{transform:translateY(-50%) translateX(100%);opacity:0;pointer-events:none}',
+    '.tcb-poll .ph{background:#111827;color:#fff;padding:14px 16px 13px;display:flex;align-items:flex-start;gap:10px;flex:0 0 auto}',
     '.tcb-poll .ph .ey{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#4ADE80;font-weight:600;margin-bottom:4px}',
     '.tcb-poll .ph b{font-family:Outfit,Inter,system-ui,sans-serif;font-size:15.5px;font-weight:700;display:block;line-height:1.2}',
-    '.tcb-poll .x{margin-left:auto;background:none;border:0;color:#9CA3AF;cursor:pointer;font-size:20px;line-height:1;padding:0 2px}',
+    '.tcb-poll .x{margin-left:auto;background:none;border:0;color:#9CA3AF;cursor:pointer;font-size:20px;line-height:1;padding:0 2px;flex:0 0 auto}',
     '.tcb-poll .x:hover{color:#fff}',
-    '.tcb-poll .pb{padding:14px 16px 16px}',
+    '.tcb-poll .pb{padding:14px 16px 16px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}',
     '.tcb-poll .q{font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:14.5px;margin:0 0 8px;color:#111827}',
     '.tcb-poll .hint{color:#6B7280;font-size:12.5px;margin:0 0 10px}',
     '.tcb-poll textarea{width:100%;min-height:96px;resize:vertical;font:inherit;font-size:14px;color:#111827;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 12px;line-height:1.5}',
@@ -95,8 +118,9 @@
     '.tcb-poll .done a{color:#16A34A;font-weight:600;text-decoration:none}',
     '.tcb-poll .err{color:#B91C1C;font-size:12.5px;margin-top:8px}',
     '.tcb-poll .hp{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden}',
-    '@media (max-width:480px){.tcb-poll{right:12px;bottom:12px}.tcb-poll .panel{width:calc(100vw - 24px)}}',
-    '@media (prefers-reduced-motion:reduce){.tcb-poll .panel,.tcb-poll .tab{transition:none}}'
+    '@media (max-width:560px){.tcb-poll .tab .vt{display:none}.tcb-poll .tab{gap:7px;padding:12px 9px;border-radius:11px 0 0 11px}}',
+    '@media (max-width:480px){.tcb-poll .panel{width:calc(100vw - 12px)}}',
+    '@media (prefers-reduced-motion:reduce){.tcb-poll .panel,.tcb-poll .tab{transition:none}.tcb-poll .tab.cue{animation:none}}'
   ].join('');
 
   var style = document.createElement('style');
@@ -154,12 +178,67 @@
   var KEY = 'tcb-poll-' + slug;
   var poll = null;
 
+  /* The rail only gets the room the site is not already using: the sticky
+     header stack at the top, and any fixed full-width bottom navigation at the
+     foot (concepts often show one on phones only). Measured rather than
+     assumed, so the poll never lands on top of the site's own controls. */
+  var GAP = 10;
+  var footers = null;
+  var fitting = false;
+  var railTop = -1, railBot = -1;
+
+  function railFit() {
+    if (!poll) return;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+
+    var head = Math.ceil(bar.getBoundingClientRect().height);
+    var stack = 0;
+    for (var i = 0; i < pushed.length; i++) {
+      stack = Math.max(stack, Math.ceil(pushed[i].getBoundingClientRect().height));
+    }
+
+    if (!footers) {
+      footers = [];
+      var kids = document.body.children;
+      for (var j = 0; j < kids.length; j++) {
+        var el = kids[j];
+        if (el === poll || el === bar || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+        if (getComputedStyle(el).position === 'fixed') footers.push(el);
+      }
+    }
+    var foot = 0;
+    for (var k = 0; k < footers.length; k++) {
+      var r = footers[k].getBoundingClientRect();
+      if (!r.height || !r.width) continue;                    // hidden at this width
+      if (r.bottom < vh - 2 || r.width < vw * 0.6) continue;  // not a bottom bar
+      foot = Math.max(foot, Math.ceil(vh - r.top));
+    }
+
+    var t = Math.round(Math.min(head + stack + GAP, vh * 0.4));
+    var b = Math.round(Math.min(foot + GAP, vh * 0.45));
+    if (t !== railTop) { railTop = t; poll.style.top = t + 'px'; }
+    if (b !== railBot) { railBot = b; poll.style.bottom = b + 'px'; }
+  }
+
+  function railFitSoon() {
+    if (fitting) return;
+    fitting = true;
+    requestAnimationFrame(function () { fitting = false; railFit(); });
+  }
+
+  function railReset() { footers = null; railTop = railBot = -1; railFit(); }
+
   function buildPoll() {
     if (!slug) return;
     poll = document.createElement('div');
     poll.className = 'tcb-poll';
     poll.innerHTML =
-      '<button class="tab" type="button" aria-haspopup="dialog"><span class="dot" aria-hidden="true"></span>Rate this concept</button>' +
+      '<button class="tab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Rate this concept">' +
+        '<svg class="arw" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>' +
+        '<span class="vt">Rate this concept</span>' +
+        '<span class="dot" aria-hidden="true"></span>' +
+      '</button>' +
       '<div class="panel" role="dialog" aria-label="Rate this concept">' +
         '<div class="ph"><div><div class="ey">Tri-Cities Board Concepts</div><b>What do you think of this concept?</b></div>' +
           '<button class="x" type="button" aria-label="Close">&times;</button></div>' +
@@ -199,11 +278,17 @@
     try { answered = localStorage.getItem(KEY) === '1'; } catch (e) {}
 
     function open() {
+      railFit();
       poll.classList.add('open');
+      tab.setAttribute('aria-expanded', 'true');
       if (answered) { show(3); return; }
-      setTimeout(function () { ta.focus(); }, 200);
+      setTimeout(function () { ta.focus({ preventScroll: true }); }, 240);
     }
-    function close() { poll.classList.remove('open'); }
+    function close(toCue) {
+      poll.classList.remove('open');
+      tab.setAttribute('aria-expanded', 'false');
+      if (toCue) tab.focus();
+    }
     function show(n) {
       s1.hidden = n !== 1; s2.hidden = n !== 2; s3.hidden = n !== 3;
       steps[0].classList.toggle('on', n >= 1); steps[1].classList.toggle('on', n >= 2);
@@ -211,8 +296,15 @@
     }
 
     tab.addEventListener('click', open);
-    x.addEventListener('click', close);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && poll.classList.contains('open')) close(); });
+    x.addEventListener('click', function () { close(true); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && poll.classList.contains('open')) close(true);
+    });
+    // Collapse again on any click out in the page, so the drawer never sits
+    // over content the visitor is trying to reach.
+    document.addEventListener('click', function (e) {
+      if (poll.classList.contains('open') && !poll.contains(e.target)) close();
+    });
     poll.querySelector('.next').addEventListener('click', function () { show(2); });
     poll.querySelector('.skip').addEventListener('click', function () { ta.value = ''; show(2); });
 
@@ -243,14 +335,15 @@
     });
 
     document.body.appendChild(poll);
-    // Nudge: open the tab once after the visitor has had a real look.
+    railFit();
+    // Nudge: twitch the cue out from the edge once the visitor has had a real look.
     if (!answered) {
       var nudged = false;
       function nudge() {
         if (nudged) return;
         if (window.scrollY > Math.max(600, document.documentElement.scrollHeight * 0.35)) {
-          nudged = true; tab.style.transform = 'translateY(-3px)';
-          setTimeout(function () { tab.style.transform = ''; }, 500);
+          nudged = true; tab.classList.add('cue');
+          setTimeout(function () { tab.classList.remove('cue'); }, 700);
         }
       }
       window.addEventListener('scroll', nudge, { passive: true });
@@ -260,11 +353,17 @@
   function mount() {
     document.body.insertBefore(bar, document.body.firstChild);
     offset();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(offset);
-    window.addEventListener('load', offset);
-    window.addEventListener('resize', offset);
     buildPoll();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(both);
+    window.addEventListener('load', both);
+    window.addEventListener('resize', function () { offset(); railReset(); });
+    window.addEventListener('orientationchange', function () { offset(); railReset(); });
+    // Bottom bars that only appear part way down the page are common, so
+    // re-measure as the visitor scrolls.
+    window.addEventListener('scroll', railFitSoon, { passive: true });
   }
+
+  function both() { offset(); railFit(); }
 
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
