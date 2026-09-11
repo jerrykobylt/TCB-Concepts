@@ -59,7 +59,11 @@ vercel --prod
   be handed to a client as-is.
 - Vercel Web Analytics is wired with a plain script tag: `/_vercel/insights/script.js` on
   the landing page, and injected by `tcb-bar.js` on every concept page, since concepts are
-  dropped in as finished HTML and would not carry it themselves. It has to be enabled on
-  the Vercel project or that path 404s. `@vercel/analytics` is in `package.json` for
-  reference, but nothing imports it — with no bundler its `inject()` would only add the
-  same tag. There is still nothing to install or build to deploy this repo.
+  dropped in as finished HTML and would not carry it themselves. Vercel serves that path
+  from its edge once Web Analytics is on for the project; turn it off and the path 404s
+  and nothing is recorded.
+- The `@vercel/analytics` package is deliberately **not** a dependency. It exists so that
+  framework apps, which cannot hand-edit their HTML, get that same tag written for them at
+  render time. This site writes the tag itself, so the package has nothing to do: it never
+  runs in the browser, and adding it only puts a `package.json` in the way that implies a
+  build this repo does not have and makes every deploy install something nothing imports.
