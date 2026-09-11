@@ -60,7 +60,10 @@
     /* A zero-width rail pinned to the right edge. JS sets its top and bottom to
        the space the concept's own sticky header and fixed bottom nav leave over,
        so the cue and the open panel both stay clear of them. */
-    '.tcb-poll{position:fixed;right:0;top:10px;bottom:10px;width:0;z-index:2147482999;pointer-events:none;',
+    /* Above the TCB bar (2147483000): full screen means the whole screen, and
+       the bar would otherwise paint over the panel header and swallow the
+       close button. In drawer mode the rail starts below the bar anyway. */
+    '.tcb-poll{position:fixed;right:0;top:10px;bottom:10px;width:0;z-index:2147483001;pointer-events:none;',
       'font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#111827}',
     '.tcb-poll .tab,.tcb-poll .panel{pointer-events:auto}',
     '.tcb-poll [hidden]{display:none!important}',
@@ -128,6 +131,25 @@
     '.tcb-poll .err{color:#B91C1C;font-size:12.5px;margin-top:8px;flex:0 0 auto}',
     '.tcb-poll .hp{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px;height:1px;overflow:hidden}',
     '@media (max-width:560px){.tcb-poll .tab .vt{display:none}.tcb-poll .tab{gap:7px;padding:12px 9px;border-radius:11px 0 0 11px}}',
+    /* On a phone the drawer becomes a dedicated full-screen feedback view:
+       it takes the whole viewport instead of sharing it with the site. */
+    '@media (max-width:640px){',
+      '.tcb-poll .panel{position:fixed;inset:0;width:auto;max-width:none;height:auto;max-height:none;',
+        'border:0;border-radius:0;box-shadow:none;transform:translateX(100%)}',
+      '.tcb-poll.open .panel{transform:translateX(0)}',
+      '.tcb-poll .ph{padding:15px 16px;align-items:center}',
+      '.tcb-poll .ph b{font-size:17px}',
+      '.tcb-poll .x{width:44px;height:44px;font-size:27px;display:flex;align-items:center;justify-content:center;margin:-6px -8px -6px auto}',
+      '.tcb-poll .pb{padding:16px 18px 20px}',
+      '.tcb-poll .q{font-size:16px}',
+      '.tcb-poll .hint{font-size:13.5px}',
+      /* 16px keeps iOS from zooming the page when the field takes focus */
+      '.tcb-poll textarea{font-size:16px;min-height:150px}',
+      '.tcb-poll .opts{grid-auto-rows:minmax(96px,auto);align-content:start;gap:10px}',
+      '.tcb-poll .btn{font-size:15.5px;padding:13px 20px}',
+      '.tcb-poll .skip{font-size:14px;padding:10px 6px}',
+      '.tcb-poll .done b{font-size:18px}',
+    '}',
     '@media (prefers-reduced-motion:reduce){.tcb-poll .panel,.tcb-poll .tab{transition:none}.tcb-poll .tab.cue{animation:none}}'
   ].join('');
 
@@ -237,6 +259,27 @@
 
   function railReset() { footers = null; railTop = railBot = -1; railFit(); }
 
+  /* Full screen on a phone, a drawer above that. When it takes the whole
+     screen the page behind it should not scroll under the finger; on desktop
+     it must stay scrollable, since the point is to review the site with the
+     panel open. */
+  var FULL = '(max-width:640px)';
+  var heldOverflow = null;
+
+  function fullScreen() {
+    return !!(window.matchMedia && window.matchMedia(FULL).matches);
+  }
+  function holdPage() {
+    if (heldOverflow !== null || !fullScreen()) return;
+    heldOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  function releasePage() {
+    if (heldOverflow === null) return;
+    document.body.style.overflow = heldOverflow;
+    heldOverflow = null;
+  }
+
   function buildPoll() {
     if (!slug) return;
     poll = document.createElement('div');
@@ -287,12 +330,14 @@
 
     function open() {
       railFit();
+      holdPage();
       poll.classList.add('open');
       tab.setAttribute('aria-expanded', 'true');
       if (answered) { show(3); return; }
       setTimeout(function () { ta.focus({ preventScroll: true }); }, 240);
     }
     function close(toCue) {
+      releasePage();
       poll.classList.remove('open');
       tab.setAttribute('aria-expanded', 'false');
       if (toCue) tab.focus();
@@ -364,14 +409,21 @@
     buildPoll();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(both);
     window.addEventListener('load', both);
-    window.addEventListener('resize', function () { offset(); railReset(); });
-    window.addEventListener('orientationchange', function () { offset(); railReset(); });
+    window.addEventListener('resize', function () { offset(); railReset(); sync(); });
+    window.addEventListener('orientationchange', function () { offset(); railReset(); sync(); });
     // Bottom bars that only appear part way down the page are common, so
     // re-measure as the visitor scrolls.
     window.addEventListener('scroll', railFitSoon, { passive: true });
   }
 
   function both() { offset(); railFit(); }
+
+  // Held page scroll belongs to full screen only, and only while open.
+  function sync() {
+    if (!poll) return;
+    if (!fullScreen() || !poll.classList.contains('open')) releasePage();
+    else holdPage();
+  }
 
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
