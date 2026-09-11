@@ -52,7 +52,7 @@
     '.tcb-bar .ask{display:inline-flex;align-items:center;gap:7px;background:#16A34A;color:#fff;font-family:Outfit,Inter,system-ui,sans-serif;font-weight:600;font-size:13.5px;padding:9px 14px;border-radius:8px;white-space:nowrap;transition:background .15s}',
     '.tcb-bar .ask:hover{background:#15803D}',
     '.tcb-bar .ask svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}',
-    '.tcb-bar a:focus-visible,.tcb-poll button:focus-visible,.tcb-poll textarea:focus-visible{outline:2px solid #38BDF8;outline-offset:2px;border-radius:6px}',
+    '.tcb-bar a:focus-visible,.tcb-poll a:focus-visible,.tcb-poll button:focus-visible,.tcb-poll textarea:focus-visible{outline:2px solid #38BDF8;outline-offset:2px;border-radius:6px}',
     '@media (max-width:760px){.tcb-bar .in{height:46px;padding:0 12px;gap:10px}.tcb-bar .which{display:none}.tcb-bar .sep{display:none}.tcb-bar .lnk.all{display:none}.tcb-bar .lnk.cur span{display:none}}',
     '@media (max-width:400px){.tcb-bar .wm b{font-size:12.5px}.tcb-bar .ask{padding:8px 11px;font-size:13px}}',
 
@@ -115,6 +115,14 @@
     '.tcb-poll .steps{display:flex;gap:5px;margin-bottom:12px;flex:0 0 auto}',
     '.tcb-poll .steps i{height:4px;flex:1;border-radius:2px;background:#E5E7EB}',
     '.tcb-poll .steps i.on{background:#16A34A}',
+    /* You cannot answer the comparison question without looking, so offer the
+       existing site in a new tab right where it is asked. */
+    '.tcb-poll .peek{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;flex:0 0 auto;margin:0 0 12px;max-width:100%;',
+      'font-family:Outfit,Inter,system-ui,sans-serif;font-size:13px;font-weight:600;color:#111827;text-decoration:none;',
+      'background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:9px;padding:9px 12px;transition:border-color .12s,background .12s}',
+    '.tcb-poll .peek:hover{border-color:#9CA3AF;background:#fff;color:#111827}',
+    '.tcb-poll .peek .pk{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.tcb-poll .peek svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.7;flex:0 0 auto}',
     '.tcb-poll .opts{display:grid;grid-template-columns:1fr;grid-auto-rows:minmax(62px,1fr);gap:8px;flex:1 1 auto;min-height:0}',
     '.tcb-poll .opt{font:inherit;cursor:pointer;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:11px;padding:12px 13px;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:3px;transition:border-color .12s,background .12s}',
     '.tcb-poll .opt b{font-family:Outfit,Inter,system-ui,sans-serif;font-size:14.5px;font-weight:700;color:#111827}',
@@ -145,6 +153,7 @@
       '.tcb-poll .hint{font-size:13.5px}',
       /* 16px keeps iOS from zooming the page when the field takes focus */
       '.tcb-poll textarea{font-size:16px;min-height:150px}',
+      '.tcb-poll .peek{font-size:14px;padding:12px 15px;margin-bottom:14px}',
       '.tcb-poll .opts{grid-auto-rows:minmax(96px,auto);align-content:start;gap:10px}',
       '.tcb-poll .btn{font-size:15.5px;padding:13px 20px}',
       '.tcb-poll .skip{font-size:14px;padding:10px 6px}',
@@ -304,6 +313,8 @@
           '</div>' +
           '<div class="s2" hidden>' +
             '<p class="q">Compared with the existing site, this is&hellip;</p>' +
+            (current ? '<a class="peek" href="' + current.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener">' +
+              '<span class="pk"></span>' + ext + '</a>' : '') +
             '<div class="opts">' +
               '<button class="opt worse" type="button" data-r="worse"><b>Worse</b><span>The current site is better</span></button>' +
               '<button class="opt same" type="button" data-r="same"><b>Same</b><span>Not much difference</span></button>' +
@@ -319,6 +330,12 @@
           '</div>' +
         '</div>' +
       '</div>';
+
+    // Name the destination rather than saying "the existing site" twice over.
+    var pk = poll.querySelector('.pk');
+    if (pk) {
+      pk.textContent = 'Open ' + current.replace(/^[a-z]+:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '');
+    }
 
     var tab = poll.querySelector('.tab'), x = poll.querySelector('.x');
     var s1 = poll.querySelector('.s1'), s2 = poll.querySelector('.s2'), s3 = poll.querySelector('.s3');
