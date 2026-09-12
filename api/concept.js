@@ -26,6 +26,22 @@ const TYPES = {
   mp4: 'video/mp4', webm: 'video/webm', mp3: 'audio/mpeg', xml: 'application/xml', webmanifest: 'application/manifest+json',
 };
 
+/* The prospect's existing site, read from the project row. Never fatal: if
+   this is not configured or the lookup fails, the page still serves and the
+   bar just omits the link, exactly as it did before. */
+async function currentUrl(base, slug) {
+  const key = env('SUPABASE_PUBLISHABLE_KEY') || env('SUPABASE_ANON_KEY');
+  if (!key) return '';
+  const url = `${base.replace(/\/$/, '')}/rest/v1/projects?slug=eq.${encodeURIComponent(slug)}&select=current_url&limit=1`;
+  try {
+    const r = await fetch(url, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!r.ok) return '';
+    const rows = await r.json();
+    const u = Array.isArray(rows) && rows[0] && rows[0].current_url;
+    return typeof u === 'string' && /^https?:\/\//i.test(u) ? u : '';
+  } catch { return ''; }
+}
+
 module.exports = async function handler(req, res) {
   const base = env('SUPABASE_URL');
   if (!base) return res.status(503).send('Storage not configured');
@@ -67,7 +83,12 @@ module.exports = async function handler(req, res) {
     }
     if (!/tcb-bar\.js/.test(html)) {
       const title = (html.match(/<title>([^<]*)<\/title>/i) || [, slug])[1].trim().split(/\s[—|–-]\s/)[0];
-      const tag = `<script src="/tcb-bar.js" data-concept="${escapeAttr(title)}" data-slug="${slug}" defer></script>`;
+      // The bar only offers "View current website" when it is told where that
+      // is, so hand it the project's current_url. A concept dropped in the
+      // bucket with no project row simply does not get the link.
+      const current = await currentUrl(base, slug);
+      const tag = `<script src="/tcb-bar.js" data-concept="${escapeAttr(title)}" data-slug="${slug}"` +
+        (current ? ` data-current="${escapeAttr(current)}"` : '') + ` defer></script>`;
       html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, tag + '\n</body>') : html + tag;
     }
     return res.status(200).send(html);

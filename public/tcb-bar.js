@@ -6,7 +6,7 @@
  *   <script src="/tcb-bar.js"
  *           data-concept="PoCo Pirates"
  *           data-slug="poco-pirates"
- *           data-current="https://www.pocominorhockey.com"
+ *           data-current="https://www.pocominorhockey.com"   (optional)
  *           defer></script>
  *
  * It prepends a slim, sticky Tri-Cities Board bar above the concept's own
@@ -185,7 +185,7 @@
       '<span class="sep" aria-hidden="true"></span>' +
       '<span class="which"><span class="tag">Concept</span><span class="name"></span></span>' +
       '<span class="acts">' +
-        (current ? '<a class="lnk cur" href="' + current.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener"><span>Existing site</span>' + ext + '</a>' : '') +
+        (current ? '<a class="lnk cur" href="' + current.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener"><span>View current website</span>' + ext + '</a>' : '') +
         '<a class="lnk all" href="' + HOME + '#work">All concepts</a>' +
         '<a class="ask" href="' + ASK + '">Ask us to build yours' +
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +

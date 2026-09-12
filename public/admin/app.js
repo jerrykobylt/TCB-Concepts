@@ -536,17 +536,84 @@
       await loadProjects(); renderAll(); toast('Written into the plan.'); openProject(state.projects.find(function (x) { return x.id === p.id; }), 'plan');
     });
     var mk = $('scanMakeProject'); if (mk) mk.addEventListener('click', async function () {
-      var name = s.host.replace(/\.(com|ca|org|net)$/i, '').replace(/[-.]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-      var ins = { slug: slugify(s.host.replace(/\.(com|ca|org|net)$/i, '')), name: name, org_name: name, status: 'prospect', track: 'undecided', current_url: s.url, listed: false, summary: (rep.summary || '').slice(0, 280) };
+      var name = nameFrom(s.signals, s.host);
+      var ins = {
+        slug: slugify(name) || slugify(s.host.replace(/\.(com|ca|org|net)$/i, '')), name: name, org_name: name,
+        status: 'prospect', track: 'undecided', current_url: s.url, listed: false,
+        summary: (rep.summary || '').slice(0, 280),
+        org_type: orgTypeFrom(rep), tags: tagsFrom(rep),
+      };
+      this.disabled = true;
       var r = await sb.from('projects').insert(ins).select().single();
       if (r.error && /duplicate|unique/i.test(r.error.message)) { ins.slug += '-' + Math.random().toString(36).slice(2, 6); r = await sb.from('projects').insert(ins).select().single(); }
+      this.disabled = false;
       if (r.error) { toast(r.error.message, 5000); return; }
-      await sb.from('project_plans').insert({ project_id: r.data.id, current_stack: reportToMarkdown(s) });
+      // Everything the scan already decided, carried into the plan so the
+      // sections are not started from nothing.
+      await sb.from('project_plans').insert({
+        project_id: r.data.id,
+        current_stack: reportToMarkdown(s),
+        replacing_with: buildBrief(rep),
+      });
       await sb.from('site_scans').update({ project_slug: ins.slug }).eq('id', s.id);
-      await Promise.all([loadProjects(), loadScans()]); renderAll(); openProject(state.projects.find(function (x) { return x.id === r.data.id; }), 'plan'); toast('Project created from the scan.');
+      await Promise.all([loadProjects(), loadScans()]); renderAll();
+      // Open on the basics, which is where the concept page gets dropped in.
+      openProject(state.projects.find(function (x) { return x.id === r.data.id; }), 'overview');
+      toast('Project created. Drop the concept page in and publish.', 5000);
     });
   }
   function sigCard(label, val, cls) { return '<div class="signal"><small>' + esc(label) + '</small><strong class="' + cls + '">' + esc(val) + '</strong></div>'; }
+  /* The host alone gives "Coqmoodyringette". The scan already captured the
+     page title, which is where the organization actually names itself, so
+     take the first part of it that is not boilerplate and fall back to the
+     host only when the title gives us nothing usable. */
+  function nameFrom(sig, host) {
+    var fallback = host.replace(/\.(com|ca|org|net)$/i, '').replace(/[-.]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    var t = String((sig && sig.title) || '').replace(/\s+/g, ' ').trim();
+    if (!t) return fallback;
+    var parts = t.split(/\s*[|–—·»]\s*|\s+-\s+/)
+      .map(function (x) { return x.replace(/^welcome to\s+/i, '').trim(); })
+      .filter(function (x) { return x && !/^(home|home ?page|welcome|index|official site|official website)$/i.test(x); });
+    var best = parts[0] || '';
+    return best.length >= 3 && best.length <= 60 ? best : fallback;
+  }
+
+  /* The scan already sorted its findings into areas; those are the honest
+     tags for the project rather than anything invented here. */
+  function tagsFrom(rep) {
+    var seen = {}, out = [];
+    (rep.findings || []).forEach(function (f) {
+      var a = String(f.area || '').trim();
+      if (!a || seen[a.toLowerCase()]) return;
+      seen[a.toLowerCase()] = 1;
+      out.push(a.charAt(0).toUpperCase() + a.slice(1));
+    });
+    return out.slice(0, 5);
+  }
+
+  /* Only claim an organization type the detected stack actually implies.
+     Anything else is left blank rather than guessed at. */
+  function orgTypeFrom(rep) {
+    var roles = (rep.stack || []).map(function (t) { return (t.role || '') + ' ' + (t.name || ''); }).join(' ');
+    if (/sports|league|team|ramp|teamsnap|rink/i.test(roles)) return 'Sports association';
+    if (/e-commerce|shop|store|payments/i.test(roles)) return 'Business';
+    return null;
+  }
+
+  /* "What we are building" started from what the scan proposed, so the
+     section opens with the approach rather than an empty box. */
+  function buildBrief(rep) {
+    var lines = [];
+    if (rep.approach) lines.push(rep.approach, '');
+    if ((rep.pitch_angles || []).length) {
+      lines.push('**Angles the scan suggested:**');
+      rep.pitch_angles.forEach(function (a) { lines.push('- ' + a); });
+      lines.push('');
+    }
+    if ((rep.preserve || []).length) lines.push('**Must keep working:** ' + rep.preserve.join('; ') + '.');
+    return lines.join('\n').trim() || null;
+  }
+
   function reportToMarkdown(s) {
     var r = s.report || {}, sig = s.signals || {};
     var lines = [];
