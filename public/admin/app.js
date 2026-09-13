@@ -153,7 +153,15 @@
     });
     var wk = week.filter(function (f) { return f.feedback; });
     if (wk.length) q.push({ icon: 'note', cls: '', t: wk.length + ' new comment' + (wk.length > 1 ? 's' : '') + ' on concepts this week', s: wk[0].feedback.slice(0, 90), when: ago(wk[0].created_at), attr: 'data-view-target="feedback"' });
-    $('attention').innerHTML = q.length ? q.map(function (it) { return '<button class="attention-item" type="button" ' + it.attr + '><span class="attention-icon ' + it.cls + '"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-' + it.icon + '"/></svg></span><span class="attention-copy"><strong>' + esc(it.t) + '</strong><span>' + esc(it.s) + '</span></span><time>' + esc(it.when) + '</time></button>'; }).join('') : '<div class="empty-state" style="padding:26px"><h3>Nothing waiting</h3><p>Go build something.</p></div>';
+    /* The card shows the first few. The rest are a click away rather than a
+       scroll down the page, because this list grows with every project. */
+    state.queue = q;
+    $('attention').innerHTML = q.length ? q.slice(0, ATTENTION_SHOWN).map(attentionRow).join('') : '<div class="empty-state" style="padding:26px"><h3>Nothing waiting</h3><p>Go build something.</p></div>';
+    var rest = q.length - ATTENTION_SHOWN;
+    $('attentionMore').hidden = rest <= 0;
+    $('attentionMore').textContent = 'Show the other ' + rest + ' item' + (rest === 1 ? '' : 's');
+    $('attentionViewAll').hidden = !q.length;
+    if ($('attentionAll').open) openAttention();
 
     $('overviewProjects').innerHTML = state.projects.length ? state.projects.slice(0, 5).map(function (p) {
       var filled = PLAN_KEYS.filter(function (k) { return p.plan[k]; }).length, pct = Math.round((filled / 6) * 70 + (p.pitch ? 20 : 0) + (p.concept_url ? 10 : 0));
@@ -164,6 +172,24 @@
     $('quickUrl').value = $('quickUrl').value || (state.projects[0] && state.projects[0].current_url) || '';
   }
   $('quickScan').addEventListener('click', function () { var u = $('quickUrl').value.trim(); go('ai'); if (u) { $('scanUrl').value = u; $('scanForm').requestSubmit(); } else $('scanUrl').focus(); });
+
+  /* ---------- needs attention ---------- */
+  var ATTENTION_SHOWN = 7;
+  function attentionRow(it) {
+    return '<button class="attention-item" type="button" ' + it.attr + '><span class="attention-icon ' + it.cls + '"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-' + it.icon + '"/></svg></span><span class="attention-copy"><strong>' + esc(it.t) + '</strong><span>' + esc(it.s) + '</span></span><time>' + esc(it.when) + '</time></button>';
+  }
+  function openAttention() {
+    var q = state.queue || [];
+    $('attentionAllCount').textContent = q.length + ' item' + (q.length === 1 ? '' : 's') + ' waiting on you';
+    $('attentionAllList').innerHTML = q.length ? q.map(attentionRow).join('') : '<div class="empty-state" style="padding:26px"><h3>Nothing waiting</h3><p>Go build something.</p></div>';
+    if (!$('attentionAll').open) $('attentionAll').showModal();
+  }
+  $('attentionMore').addEventListener('click', openAttention);
+  $('attentionViewAll').addEventListener('click', openAttention);
+  $('attentionAllClose').addEventListener('click', function () { $('attentionAll').close(); });
+  // Picking something here takes you to it, so the popup gets out of the way.
+  $('attentionAllList').addEventListener('click', function (e) { if (e.target.closest('.attention-item')) $('attentionAll').close(); });
+  $('attentionAll').addEventListener('click', function (e) { if (e.target === this) this.close(); });
 
   /* ---------- projects ---------- */
   $('projFilters').addEventListener('click', function (e) { var b = e.target.closest('.filter-tab'); if (!b) return; state.pf = b.dataset.pf; $$('#projFilters .filter-tab').forEach(function (x) { x.classList.toggle('active', x === b); }); renderProjects(); });

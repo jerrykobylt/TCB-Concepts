@@ -260,6 +260,9 @@
     .attention-copy strong { display: block; overflow: hidden; font-size: .78rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
     .attention-copy span { display: block; margin-top: 4px; color: var(--steel); font-size: .68rem; }
     .attention-item time { color: var(--muted); font-size: .65rem; }
+    .attention-more { width: 100%; padding: 13px 20px; border: 0; border-top: 1px solid var(--line); color: var(--green-dark); background: #fbfcfd; font-family: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+    .attention-more:hover { background: var(--green-soft); }
+    .attention-list.scroller { max-height: min(66vh, 620px); overflow-y: auto; overscroll-behavior: contain; }
 
     .ai-quick { position: relative; overflow: hidden; color: #fff; background: linear-gradient(150deg, #071a2d 0%, #0c3650 68%, #075b75 100%); }
     .ai-quick::after { content: ""; position: absolute; width: 210px; height: 210px; right: -100px; top: -110px; border: 45px solid rgba(125,211,252,.08); border-radius: 50%; }
@@ -552,10 +555,12 @@
     .note-compose textarea { width: 100%; min-height: 82px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; resize: vertical; outline: 0; }
     .note-compose textarea:focus { border-color: rgba(22,163,74,.55); box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
 
+    dialog.wide { width: min(720px, calc(100% - 28px)); }
     dialog { width: min(540px, calc(100% - 28px)); padding: 0; border: 0; border-radius: 16px; color: var(--ink); background: #fff; box-shadow: 0 30px 90px rgba(11,18,32,.25); }
     dialog::backdrop { background: rgba(11,18,32,.52); backdrop-filter: blur(3px); }
     .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 21px; border-bottom: 1px solid var(--line); }
     .modal-head h2 { margin: 0; font-family: var(--display); font-size: 1.1rem; }
+    .modal-head p { margin: 4px 0 0; color: var(--steel); font-size: .7rem; }
     .modal-body { padding: 20px 21px; }
     .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
     .modal-grid .full { grid-column: 1 / -1; }
@@ -900,8 +905,9 @@
         <div class="metric-grid" id="metrics"></div>
         <div class="dashboard-grid">
           <article class="card">
-            <div class="card-head"><div><h2>Needs attention</h2><p>Items waiting on a decision or a reply</p></div><button class="text-link" type="button" data-view-target="projects">View all <svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-arrow"/></svg></button></div>
+            <div class="card-head"><div><h2>Needs attention</h2><p>Items waiting on a decision or a reply</p></div><button class="text-link" type="button" id="attentionViewAll">View all <svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-arrow"/></svg></button></div>
             <div class="attention-list" id="attention"></div>
+            <button class="attention-more" type="button" id="attentionMore" hidden></button>
           </article>
           <article class="card ai-quick"><div class="card-body"><span class="ai-kicker"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-spark"/></svg>AI Site Intel</span><h2>Know the site before you rebuild it.</h2><p>Read the platform, structure and problems behind any prospect's website, then turn it into a build brief.</p><div class="ai-quick-actions"><input type="url" id="quickUrl" placeholder="https://www.theirsite.com" aria-label="Website to scan"><button type="button" id="quickScan" aria-label="Scan this site"><svg class="icon" style="margin:auto" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-arrow"/></svg></button></div></div></article>
         </div>
@@ -1064,6 +1070,11 @@
 
   <!-- REQUEST DRAWER -->
   <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <dialog class="wide" id="attentionAll" aria-labelledby="attentionAllTitle">
+    <div class="modal-head"><div><h2 id="attentionAllTitle">Needs attention</h2><p id="attentionAllCount"></p></div><button class="close-button" type="button" id="attentionAllClose" aria-label="Close"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-x"/></svg></button></div>
+    <div class="attention-list scroller" id="attentionAllList"></div>
+  </dialog>
+
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="rdOrg" hidden>
     <div class="drawer-head"><div><h2 id="rdOrg"></h2><p id="rdK"></p></div><button class="close-button" type="button" id="rdClose" aria-label="Close"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-x"/></svg></button></div>
     <div class="drawer-body">
