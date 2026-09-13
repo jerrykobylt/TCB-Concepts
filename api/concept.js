@@ -55,18 +55,26 @@ module.exports = async function handler(req, res) {
   const slug = segs[0];
   if (!/^[a-z0-9-]{2,80}$/.test(slug)) return res.status(404).send('Not found');
 
-  // vercel.json strips trailing slashes, so /concepts/<slug> is the canonical
-  // page URL. Serve index.html for it and for any extensionless path, and
-  // inject a <base> so the page's relative assets still resolve under the slug.
-  let injectBase = false;
-  if (segs.length === 1) { p = `${slug}/index.html`; injectBase = true; }
-  else if (!/\.[a-z0-9]+$/i.test(p)) { p = p.replace(/\/?$/, '/index.html'); injectBase = true; }
+  /* vercel.json strips trailing slashes and cleanUrls strips .html, so an
+     extensionless path reaches us for both a page and a folder: /concepts/x
+     is the concept's home, /concepts/x/about is about.html if the site has
+     one and about/index.html if it does not. Try the file before the folder,
+     since that is the shape a multi-page site dropped as a folder has. */
+  const tries = [];
+  if (segs.length === 1) tries.push(`${slug}/index.html`);
+  else if (/\.[a-z0-9]+$/i.test(p)) tries.push(p);
+  else tries.push(`${p}.html`, `${p}/index.html`);
 
-  const url = `${base.replace(/\/$/, '')}/storage/v1/object/public/concepts/${p.split('/').map(encodeURIComponent).join('/')}`;
-  let up;
-  try { up = await fetch(url); } catch { return res.status(502).send('Storage unreachable'); }
-  if (up.status === 404 || up.status === 400) return res.status(404).send('Not found');
-  if (!up.ok) return res.status(502).send('Storage error');
+  let up = null;
+  for (const cand of tries) {
+    const url = `${base.replace(/\/$/, '')}/storage/v1/object/public/concepts/${cand.split('/').map(encodeURIComponent).join('/')}`;
+    let r;
+    try { r = await fetch(url); } catch { return res.status(502).send('Storage unreachable'); }
+    if (r.status === 404 || r.status === 400) continue;
+    if (!r.ok) return res.status(502).send('Storage error');
+    up = r; p = cand; break;
+  }
+  if (!up) return res.status(404).send('Not found');
 
   const ext = (p.split('.').pop() || '').toLowerCase();
   const type = TYPES[ext] || up.headers.get('content-type') || 'application/octet-stream';
@@ -74,9 +82,16 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
+  const prefix = `/concepts/${encodeURIComponent(slug)}/`;
+
+  if (ext === 'css') {
+    return res.status(200).send(reroot(await up.text(), prefix, true));
+  }
+
   if (ext === 'html' || ext === 'htm') {
-    let html = await up.text();
-    if (injectBase && !/<base\s/i.test(html)) {
+    // Rerooting first, so the bar's own /tcb-bar.js is not moved under the slug.
+    let html = reroot(await up.text(), prefix, false);
+    if (!/<base\s/i.test(html)) {
       const dir = p.split('/').slice(0, -1).map(encodeURIComponent).join('/');
       const baseTag = `<base href="/concepts/${dir}/">`;
       html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + baseTag) : baseTag + html;
@@ -97,6 +112,26 @@ module.exports = async function handler(req, res) {
   const buf = Buffer.from(await up.arrayBuffer());
   return res.status(200).send(buf);
 };
+
+/* A concept is a whole site living under /concepts/<slug>/, but sites are
+   built to sit at a domain root, so they ask for /css/app.css and /img/crest.png.
+   A <base> tag cannot help with those: the browser resolves a leading slash
+   against the origin, not the base, so every one of them would 404 against the
+   Concepts site itself. Move them under the slug instead, in the concept's own
+   HTML and CSS. Absolute and protocol-relative URLs are left alone, and so is
+   anything already under the concept. A URL a script builds at runtime is
+   beyond reach: those still have to be relative in the dropped files. */
+function reroot(text, prefix, isCss) {
+  const fix = (rest) => (rest.indexOf(prefix.slice(1)) === 0 ? '/' + rest : prefix + rest);
+  const out = String(text)
+    .replace(/url\(\s*(["']?)\/(?!\/)([^"')]*)\1\s*\)/gi, (m, q, rest) => 'url(' + q + fix(rest) + q + ')')
+    .replace(/@import\s+(["'])\/(?!\/)([^"']*)\1/gi, (m, q, rest) => '@import ' + q + fix(rest) + q);
+  if (isCss) return out;
+  return out
+    .replace(/\b(src|href|action|poster|data-src)\s*=\s*(["'])\/(?!\/)([^"']*)\2/gi, (m, a, q, rest) => a + '=' + q + fix(rest) + q)
+    .replace(/\b(srcset|imagesrcset)\s*=\s*(["'])([^"']*)\2/gi, (m, a, q, v) =>
+      a + '=' + q + v.split(',').map((one) => one.replace(/^(\s*)\/(?!\/)(\S*)/, (mm, sp, rest) => sp + fix(rest))).join(',') + q);
+}
 
 function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');

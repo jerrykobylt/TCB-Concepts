@@ -236,7 +236,7 @@
     var staged = state.pending || [];
     if (pub) {
       var hasPage = staged.some(function (f) { return f._rel === 'index.html'; }) || state.pageLive;
-      if (!hasPage) { toast('Drop the concept\'s HTML file in first', 4000); showPane('overview'); return; }
+      if (!hasPage) { toast(staged.length ? 'Nothing in that drop is an HTML page, so there is no concept to publish.' : 'Drop the concept\'s HTML file in first', 5000); showPane('overview'); return; }
       row.listed = true;
       if (row.status === 'prospect') row.status = 'concept';
       row.concept_url = C.site + '/concepts/' + row.slug;
@@ -348,8 +348,22 @@
     $('aiLock').hidden = !locked;
   }
   function guessType(n) { var e = (n.split('.').pop() || '').toLowerCase(); return { html: 'text/html', htm: 'text/html', css: 'text/css', js: 'text/javascript', json: 'application/json', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', ico: 'image/x-icon', woff: 'font/woff', woff2: 'font/woff2', pdf: 'application/pdf', mp4: 'video/mp4', txt: 'text/plain' }[e] || 'application/octet-stream'; }
-  /* Hold dropped files until Save or Publish. A lone HTML file becomes the
-     page whatever it is called, so "drop the HTML in" is the whole job. */
+  /* The page the concept opens on. /concepts/<slug> serves index.html, so one
+     has to end up at the root of the drop: the shallowest HTML there is, and
+     among equals an index, then a home or default page. */
+  function pickPage(list) {
+    var htmls = list.filter(function (f) { return /\.html?$/i.test(f._rel); });
+    if (!htmls.length) return null;
+    function depth(f) { return f._rel.split('/').length; }
+    function rank(f) { return /(^|\/)index\.html?$/i.test(f._rel) ? 0 : /(^|\/)(home|default|main)\.html?$/i.test(f._rel) ? 1 : 2; }
+    return htmls.slice().sort(function (a, b) { return depth(a) - depth(b) || rank(a) - rank(b) || a._rel.length - b._rel.length; })[0];
+  }
+
+  /* Hold dropped files until Save or Publish. Folders come in every shape:
+     the site at the top level, the site one folder down inside an export, a
+     multi-page site whose home page is called something else. Whatever the
+     shape, the drop is re-rooted on the page we find so an index.html ends up
+     at the root, which is the one thing /concepts/<slug> needs. */
   function stage(files) {
     var list = Array.prototype.slice.call(files).filter(function (f) { return f.size > 0; });
     if (!list.length) return;
@@ -358,18 +372,34 @@
       if (!f._rel && f.webkitRelativePath && rel.indexOf('/') > -1) rel = rel.split('/').slice(1).join('/');
       f._rel = rel;
     });
-    var htmls = list.filter(function (f) { return /\.html?$/i.test(f._rel); });
-    if (list.length === 1 && htmls.length === 1) list[0]._rel = 'index.html';
-    else if (htmls.length === 1 && !htmls.some(function (f) { return f._rel === 'index.html'; }) && htmls[0]._rel.indexOf('/') < 0) htmls[0]._rel = 'index.html';
+
+    var have = (state.pending || []).some(function (f) { return f._rel === 'index.html'; }) || state.inBucket;
+    var page = have ? null : pickPage(list), was = page && page._rel, note = [];
+    // A site exported inside a folder: publish the site, not the wrapper.
+    if (page && page._rel.indexOf('/') > -1) {
+      var root = page._rel.slice(0, page._rel.lastIndexOf('/') + 1);
+      list = list.filter(function (f) { return f._rel.indexOf(root) === 0; });
+      list.forEach(function (f) { f._rel = f._rel.slice(root.length); });
+      note.push(root + ' is the site root.');
+    }
+    if (page && page._rel !== 'index.html') {
+      // One page can be renamed. In a multi-page site the other pages link to
+      // it by name, so it goes up under both names instead.
+      if (list.filter(function (f) { return /\.html?$/i.test(f._rel); }).length > 1) {
+        var copy = new File([page], 'index.html', { type: 'text/html' });
+        copy._rel = 'index.html'; list.push(copy);
+        note.push(page._rel + ' is the home page, published as index.html as well.');
+      } else { page._rel = 'index.html'; note.push(was + ' is the page.'); }
+    }
 
     state.pending = (state.pending || []).filter(function (o) { return !list.some(function (f) { return f._rel === o._rel; }); }).concat(list);
     var named = list.map(function (f) { return f._rel; });
-    $('dropMsg').textContent = named.length > 3
+    $('dropMsg').textContent = (named.length > 3
       ? named.length + ' files ready: ' + named.slice(0, 3).join(', ') + '…'
-      : 'Ready: ' + named.join(', ');
-    if (!$('pName').value.trim() && htmls.length) {
+      : 'Ready: ' + named.join(', ')) + (note.length ? ' — ' + note.join(' ') : '');
+    if (!$('pName').value.trim() && page) {
       var t = null;
-      htmls[0].text().then(function (txt) { t = (txt.match(/<title>([^<]*)<\/title>/i) || [])[1]; if (t && !$('pName').value.trim()) { $('pName').value = t.trim().split(/\s[—–|-]\s/)[0]; $('pName').dispatchEvent(new Event('input')); } });
+      page.text().then(function (txt) { t = (txt.match(/<title>([^<]*)<\/title>/i) || [])[1]; if (t && !$('pName').value.trim()) { $('pName').value = t.trim().split(/\s[—–|-]\s/)[0]; $('pName').dispatchEvent(new Event('input')); } });
     }
     renderPage();
   }
