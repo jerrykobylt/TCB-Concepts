@@ -286,15 +286,22 @@ module.exports = async function handler(req, res) {
   }
   const signals = measure(page.text, page, target.href);
 
-  // Cheap extras: robots and sitemap, best effort.
-  try {
-    const rb = await fetchText(new URL('/robots.txt', page.url).href, 6000, page.mode);
-    signals.robots = rb.ok ? { present: true, disallowAll: /disallow:\s*\/\s*$/im.test(rb.text), sitemapDeclared: /sitemap:/i.test(rb.text) } : { present: false };
-  } catch { signals.robots = { present: false }; }
-  try {
-    const sm = await fetchText(new URL('/sitemap.xml', page.url).href, 6000, page.mode);
-    signals.sitemap = sm.ok && /<urlset|<sitemapindex/i.test(sm.text) ? { present: true, urls: (sm.text.match(/<loc>/gi) || []).length } : { present: false };
-  } catch { signals.sitemap = { present: false }; }
+  /* Cheap extras: robots and sitemap, asked for the same way the page was.
+     A site that refused this server directly refuses these too, so asking the
+     first way again would record an absence we never saw, and the report
+     argues from these measurements. Where the channel that worked cannot
+     answer for a side file we leave the measurement out rather than assert a
+     "none" we did not observe. */
+  const side = async (path) => {
+    let href; try { href = new URL(path, page.url).href; } catch { return null; }
+    if (page.mode === 'firecrawl') return null; // a credit each, for a side file
+    if (String(page.mode).startsWith('relay')) return fetchViaRelay(href, base, key, token);
+    try { return await fetchText(href, 6000, page.mode); } catch { return null; }
+  };
+  const rb = await side('/robots.txt');
+  if (rb) signals.robots = rb.ok ? { present: true, disallowAll: /disallow:\s*\/\s*$/im.test(rb.text), sitemapDeclared: /sitemap:/i.test(rb.text) } : { present: false };
+  const sm = await side('/sitemap.xml');
+  if (sm) signals.sitemap = sm.ok && /<urlset|<sitemapindex/i.test(sm.text) ? { present: true, urls: (sm.text.match(/<loc>/gi) || []).length } : { present: false };
 
   // 2. Ask for the report.
   const { textSample, ...facts } = signals;
