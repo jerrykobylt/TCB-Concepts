@@ -55,6 +55,13 @@ vercel --prod
 - The whole site is served with `X-Robots-Tag: noindex, nofollow`. These are private
   sales concepts, not pages that should turn up in search results next to a prospect's
   real website.
+- Scanning a prospect's site goes through four rungs, stopping at the first that
+  answers: identified crawler, then browser-like headers, then a Supabase edge
+  function (`tcb-fetch`) because some bot management refuses Vercel's addresses
+  while answering the same request from elsewhere, then Firecrawl. Only the last
+  costs anything, and it is skipped entirely unless `FIRECRAWL_API_KEY` is set
+  in the Vercel project. `FIRECRAWL_API_URL` can point at a self-hosted one. The
+  scan records which rung answered in `signals.fetchedAs`.
 - No build step and no framework. Concepts are plain HTML so they stay portable and can
   be handed to a client as-is.
 - Vercel Web Analytics is wired with a plain script tag: `/_vercel/insights/script.js` on

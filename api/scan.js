@@ -56,24 +56,84 @@ async function fetchText(url, ms, mode) {
   } finally { clearTimeout(t); }
 }
 
-/* Declared first, browser-like only if that was refused. Returns whichever
-   answered, plus how, so the report can say so. */
-async function fetchPage(url, ms) {
-  let first;
+/* Read the page through a Supabase edge function. Some bot management refuses
+   Vercel's addresses outright while answering the identical request from
+   elsewhere, and tcmbha.com is one: 403 here, 200 and 75KB from that runtime.
+   The caller's own admin token goes with it, so the relay is not an open
+   proxy. */
+async function fetchViaRelay(url, base, key, token) {
+  if (!base || !token) return null;
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 25000);
+  try {
+    const r = await fetch(`${base.replace(/\/$/, '')}/functions/v1/tcb-fetch`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'x-tcb-token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: ctl.signal,
+    });
+    const d = await r.json().catch(() => null);
+    return d && d.ok ? d : null;
+  } catch { return null; }
+  finally { clearTimeout(t); }
+}
+
+/* Last resort, and the only step that costs anything: Firecrawl renders the
+   page and gets through protection the other two cannot. Skipped entirely
+   unless FIRECRAWL_API_KEY is set. */
+async function fetchViaFirecrawl(url) {
+  const apiKey = env('FIRECRAWL_API_KEY');
+  if (!apiKey) return null;
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 45000);
+  const started = Date.now();
+  try {
+    // Overridable so a self-hosted Firecrawl can be pointed at instead.
+    const api = (env('FIRECRAWL_API_URL') || 'https://api.firecrawl.dev').replace(/\/$/, '');
+    const r = await fetch(`${api}/v2/scrape`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, formats: ['rawHtml'], onlyMainContent: false, timeout: 40000 }),
+      signal: ctl.signal,
+    });
+    const d = await r.json().catch(() => null);
+    const data = d && (d.data || d);
+    const html = data && (data.rawHtml || data.html);
+    if (!r.ok || !html) return null;
+    const meta = (data && data.metadata) || {};
+    if (meta.statusCode && meta.statusCode >= 400) return null;
+    return {
+      ok: true, status: meta.statusCode || 200, url: meta.sourceURL || url, mode: 'firecrawl',
+      headers: {}, bytes: html.length, text: html.slice(0, MAX_BYTES), ms: Date.now() - started,
+    };
+  } catch { return null; }
+  finally { clearTimeout(t); }
+}
+
+/* Declared first, then browser-like, then off this network entirely. Cheapest
+   and most honest step that works wins, and whichever it was is recorded. */
+async function fetchPage(url, ms, ctx) {
+  let first = null;
   try {
     first = await fetchText(url, ms, 'bot');
     if (first.ok || !BLOCKED.includes(first.status)) return first;
-  } catch (e) {
-    first = { blockedBy: e };
-  }
+  } catch { /* try the next rung */ }
+
+  let second = null;
   try {
-    const second = await fetchText(url, ms, 'browser');
+    second = await fetchText(url, ms, 'browser');
     if (second.ok) return second;
-    return first.status ? first : second;
-  } catch (e) {
-    if (first && first.status) return first;
-    throw e;
-  }
+  } catch { /* try the next rung */ }
+
+  const relayed = await fetchViaRelay(url, ctx && ctx.base, ctx && ctx.key, ctx && ctx.token);
+  if (relayed) return relayed;
+
+  const crawled = await fetchViaFirecrawl(url);
+  if (crawled) return crawled;
+
+  const failed = first || second;
+  if (failed) return failed;
+  throw new Error('could not reach that site');
 }
 
 const SIGNATURES = [
@@ -217,11 +277,11 @@ module.exports = async function handler(req, res) {
 
   // 1. Read the site.
   let page;
-  try { page = await fetchPage(target.href, 15000); }
+  try { page = await fetchPage(target.href, 15000, { base, key, token }); }
   catch (e) { return res.status(502).json({ ok: false, error: 'Could not reach that site: ' + (e && e.name === 'AbortError' ? 'timed out' : (e && e.message) || 'unknown error') }); }
   if (!page.ok) {
     return res.status(502).json({ ok: false, error: BLOCKED.includes(page.status)
-      ? `The site answered ${page.status}. It is behind bot protection that refuses this server even as a browser, so it cannot be scanned from here.`
+      ? `The site answered ${page.status}. Its bot protection refused this server directly and through the relay${env('FIRECRAWL_API_KEY') ? ' and Firecrawl' : ', and no FIRECRAWL_API_KEY is set to try Firecrawl'}.`
       : `The site answered ${page.status}.` });
   }
   const signals = measure(page.text, page, target.href);
