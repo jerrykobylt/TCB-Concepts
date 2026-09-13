@@ -36,6 +36,22 @@ prospect sees their own site.
 2. Add a card for it to the grid in `public/index.html`.
 3. Commit and push. Vercel deploys `main` automatically.
 
+## Editing the front page
+
+The copy and images on `public/index.html` are editable from the admin, under
+**Page settings**, without a deploy. Every element carrying `data-cms="<key>"`
+(or `data-cms-src` on an image) becomes a field there: the admin reads the live
+page to build the form, so marking up a new bit of the page is one attribute
+here and nothing at all in the admin.
+
+Overrides are saved as `site/content.json` in the `concepts` bucket, served by
+`/api/content`, and applied by a small inline script at the end of the page's
+head. A field left empty keeps whatever the HTML ships with, so the page always
+stands on its own if the bucket or the API is unreachable. Editors get plain
+text with `**bold**` as the only markup, escaped on the way in. Uploaded images
+land in `site/img/` in the same bucket and are served through
+`/concepts/site/img/...`, which is why the slug `site` is reserved.
+
 ## Local preview
 
 ```

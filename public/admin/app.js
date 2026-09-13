@@ -93,7 +93,7 @@
   }
 
   /* ---------- navigation ---------- */
-  var TITLES = { overview: 'Overview', projects: 'Projects', project: 'Project', ai: 'AI Site Intel', requests: 'Requests', feedback: 'Feedback', settings: 'Settings' };
+  var TITLES = { overview: 'Overview', projects: 'Projects', project: 'Project', ai: 'AI Site Intel', requests: 'Requests', feedback: 'Feedback', page: 'Page settings', settings: 'Settings' };
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-view-target]'); if (b) { e.preventDefault(); go(b.dataset.viewTarget); return; }
     var n = e.target.closest('[data-new-project]'); if (n) { openProject(blank()); return; }
@@ -107,6 +107,7 @@
     $('breadcrumb-current').textContent = v === 'project' && state.proj ? (state.proj.name || 'New project') : (TITLES[v] || v);
     closeNav(); window.scrollTo(0, 0);
     if (v === 'ai') { fillScanProjects(); renderRecentScans(); }
+    if (v === 'page' && !cms.loaded) loadCms();
   }
   function openNav() { $('sidebar').classList.add('open'); $('sidebar-backdrop').hidden = false; document.body.classList.add('nav-open'); $('menu-button').setAttribute('aria-expanded', 'true'); }
   function closeNav() { $('sidebar').classList.remove('open'); $('sidebar-backdrop').hidden = true; document.body.classList.remove('nav-open'); $('menu-button').setAttribute('aria-expanded', 'false'); }
@@ -460,6 +461,145 @@
       } else stage(e.dataTransfer.files);
     });
   })();
+
+
+  /* ---------- page settings ----------
+     The front page is the schema. Every [data-cms] on it becomes a field here,
+     so making a new bit of the page editable is one attribute in the HTML and
+     nothing at all in this file. Saved overrides live in the bucket next to
+     the concepts and are read back by /api/content. */
+  var CMS_PATH = 'site/content.json';
+  var CMS_GROUPS = { hero: 'Hero', work: 'The work', how: 'How it works', included: 'What you get', fit: 'Who we say yes to', cost: 'What it costs', ask: 'Ask us', board: 'The Board' };
+  var CMS_WORDS = { eyebrow: 'Eyebrow', title: 'Heading', name: 'Heading', lede: 'Intro', body: 'Paragraph', li: 'Bullet', cta: 'Button', point: 'Point', check: 'Item', step: 'Step', card: 'Card', track: 'Option', note: 'Note', choice: 'Left block', goal: 'Right block', slot: 'Open slot', kind: 'Label', price: 'Price', flag: 'Flag', image: 'Image' };
+  var cms = { fields: [], values: {}, loaded: false, pick: '' };
+
+  function cmsLabel(key) {
+    var bits = key.split('.').slice(1);
+    if (!bits.length) return 'Text';
+    return bits.map(function (b) {
+      var m = b.match(/^([a-z]+)(\d+)$/), word = m ? m[1] : b, n = m ? ' ' + m[2] : '';
+      return (CMS_WORDS[word] || word.charAt(0).toUpperCase() + word.slice(1)) + n;
+    }).join(' · ');
+  }
+
+  async function loadCms() {
+    $('cmsForm').innerHTML = '<p class="muted">Reading the front page…</p>';
+    try {
+      var html = await fetch('/?cms=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); });
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      cms.fields = $$('[data-cms],[data-cms-src]', doc).map(function (el) {
+        var img = el.hasAttribute('data-cms-src');
+        return { key: img ? el.getAttribute('data-cms-src') : el.getAttribute('data-cms'), img: img,
+                 def: img ? el.getAttribute('src') : el.textContent.replace(/\s+/g, ' ').trim() };
+      });
+      if (!cms.fields.length) throw new Error('nothing on the page is marked editable');
+      cms.values = await fetch('/api/content?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }) || {};
+      cms.loaded = true;
+      renderCms();
+    } catch (e) {
+      $('cmsForm').innerHTML = '<p class="muted">Could not read the front page: ' + esc(e.message) + '</p>';
+    }
+  }
+
+  function cmsField(f) {
+    var v = cms.values[f.key] || '';
+    var head = '<label>' + esc(cmsLabel(f.key)) + '<span class="mono key">' + esc(f.key) + '</span>'
+      + '<button class="rm" type="button" data-reset="' + esc(f.key) + '"' + (v ? '' : ' hidden') + '>Back to default</button></label>';
+    if (f.img) {
+      return '<div class="cms-field' + (v ? ' changed' : '') + '" data-find="' + esc((cmsLabel(f.key) + ' ' + f.key).toLowerCase()) + '">' + head
+        + '<div class="cms-img"><img src="' + esc(v || f.def) + '" alt="">'
+        + '<div><input type="text" data-key="' + esc(f.key) + '" value="' + esc(v) + '" placeholder="' + esc(f.def) + '">'
+        + '<button class="btn btn-secondary btn-small" type="button" data-pick="' + esc(f.key) + '">Upload an image…</button>'
+        + '</div></div></div>';
+    }
+    var big = f.def.length > 90;
+    return '<div class="cms-field' + (v ? ' changed' : '') + '" data-find="' + esc((cmsLabel(f.key) + ' ' + f.key + ' ' + f.def).toLowerCase()) + '">' + head
+      + (big ? '<textarea rows="' + Math.min(6, Math.ceil(f.def.length / 78) + 1) + '" data-key="' + esc(f.key) + '" placeholder="' + esc(f.def) + '">' + esc(v) + '</textarea>'
+             : '<input type="text" data-key="' + esc(f.key) + '" value="' + esc(v) + '" placeholder="' + esc(f.def) + '">')
+      + '</div>';
+  }
+
+  function renderCms() {
+    var groups = {};
+    cms.fields.forEach(function (f) { var g = f.key.split('.')[0]; (groups[g] = groups[g] || []).push(f); });
+    var known = Object.keys(CMS_GROUPS).filter(function (g) { return groups[g]; });
+    var rest = Object.keys(groups).filter(function (g) { return !CMS_GROUPS[g]; });
+    var changed = Object.keys(cms.values).filter(function (k) { return cms.values[k]; }).length;
+    $('cmsCount').textContent = cms.fields.length + ' fields · ' + (changed ? changed + ' changed from the built-in copy' : 'all showing the built-in copy');
+    $('cmsForm').innerHTML = known.concat(rest).map(function (g) {
+      return '<article class="card"><div class="card-head"><div><h2>' + esc(CMS_GROUPS[g] || g) + '</h2><p>'
+        + groups[g].length + ' field' + (groups[g].length === 1 ? '' : 's') + '</p></div></div><div class="card-body">'
+        + groups[g].map(cmsField).join('') + '</div></article>';
+    }).join('');
+    cmsFilter();
+  }
+
+  // Find a field by its label, its key or the words currently on the page.
+  function cmsFilter() {
+    var q = ($('cmsSearch').value || '').trim().toLowerCase();
+    $$('#cmsForm .card').forEach(function (card) {
+      var shown = 0;
+      $$('.cms-field', card).forEach(function (f) {
+        var hit = !q || f.dataset.find.indexOf(q) > -1;
+        f.hidden = !hit; if (hit) shown++;
+      });
+      card.hidden = !shown;
+    });
+  }
+
+  async function saveCms() {
+    var out = {};
+    $$('#cmsForm [data-key]').forEach(function (el) { var v = el.value.trim(); if (v) out[el.dataset.key] = v; });
+    var b = $('cmsSave'); b.disabled = true;
+    var blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+    var r = await sb.storage.from(BUCKET).upload(CMS_PATH, blob, { upsert: true, contentType: 'application/json', cacheControl: '30' });
+    b.disabled = false;
+    if (r.error) { toast('Save failed: ' + r.error.message, 6000); return; }
+    cms.values = out; renderCms();
+    var n = Object.keys(out).length;
+    toast(n ? n + ' change' + (n === 1 ? '' : 's') + ' published. The page picks them up within a minute.' : 'Every field is back to the built-in copy.', 5000);
+  }
+
+  async function cmsUpload(key, file) {
+    var name = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '');
+    var path = 'site/img/' + Date.now().toString(36) + '-' + name;
+    toast('Uploading ' + name + '…');
+    var r = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: guessType(name), cacheControl: '3600' });
+    if (r.error) { toast(r.error.message, 6000); return; }
+    var url = '/concepts/' + path;
+    var input = document.querySelector('#cmsForm [data-key="' + key + '"]');
+    if (input) {
+      input.value = url;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      var shot = input.closest('.cms-img') && input.closest('.cms-img').querySelector('img');
+      if (shot) shot.src = url;
+    }
+    toast('Uploaded. Save to publish it.', 4000);
+  }
+
+  $('cmsForm').addEventListener('click', function (e) {
+    var r = e.target.closest('[data-reset]');
+    if (r) {
+      var input = document.querySelector('#cmsForm [data-key="' + r.dataset.reset + '"]');
+      if (input) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); }
+      return;
+    }
+    var p = e.target.closest('[data-pick]');
+    if (p) { cms.pick = p.dataset.pick; $('cmsFile').click(); }
+  });
+  $('cmsForm').addEventListener('input', function (e) {
+    var el = e.target.closest('[data-key]'); if (!el) return;
+    var field = el.closest('.cms-field'), on = !!el.value.trim();
+    field.classList.toggle('changed', on);
+    var btn = field.querySelector('[data-reset]'); if (btn) btn.hidden = !on;
+    var img = field.querySelector('.cms-img img');
+    if (img) img.src = el.value.trim() || el.placeholder;
+  });
+  $('cmsFile').addEventListener('change', function () { if (this.files[0] && cms.pick) cmsUpload(cms.pick, this.files[0]); this.value = ''; });
+  $('cmsSearch').addEventListener('input', cmsFilter);
+  $('cmsSave').addEventListener('click', saveCms);
+  $('cmsReload').addEventListener('click', function () { cms.loaded = false; loadCms(); });
 
   /* ---------- AI: pitch and plan ---------- */
   async function callAI(mode) {

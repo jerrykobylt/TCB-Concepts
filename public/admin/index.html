@@ -718,6 +718,18 @@
     .report-pitch p { margin: 0 0 10px; }
     .report-pitch ul { margin: 0 0 10px; padding-left: 18px; }
     .files .rm { background: none; border: 0; color: var(--red); font-size: .8rem; cursor: pointer; }
+    .cms-field { margin-bottom: 17px; }
+    .cms-field:last-child { margin-bottom: 0; }
+    .cms-field > label { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+    .cms-field input[type=text], .cms-field textarea { width: 100%; }
+    .cms-field label .key { margin-left: 2px; color: var(--muted); font-size: .66rem; font-weight: 500; }
+    .cms-field label .rm { margin-left: auto; padding: 0; background: none; border: 0; color: var(--red); font-size: .72rem; font-weight: 700; cursor: pointer; }
+    .cms-field.changed > label { color: var(--green-dark); }
+    .cms-img { display: flex; gap: 14px; align-items: flex-start; }
+    .cms-img img { width: 140px; height: 88px; flex: 0 0 auto; object-fit: cover; border-radius: 9px; border: 1px solid var(--line); background: var(--paper-2); }
+    .cms-img > div { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+    .cms-img > div input { width: 100%; }
+    @media (max-width: 640px) { .cms-img { flex-direction: column; } .cms-img img { width: 100%; height: 160px; } }
     .files-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: .76rem; }
     .files-head .rm { padding: 0; background: none; border: 0; color: var(--red); font-size: .78rem; font-weight: 700; cursor: pointer; }
     .files-head .rm[disabled] { color: var(--muted); cursor: default; }
@@ -853,6 +865,7 @@
       <button class="nav-item" type="button" data-view-target="feedback"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-note"/></svg>Feedback <span class="count" id="cFeedback">0</span></button>
     </nav></div>
     <div class="nav-group"><p class="nav-label">Site</p><nav class="nav-list">
+      <button class="nav-item" type="button" data-view-target="page"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-file"/></svg>Page settings</button>
       <a class="nav-item" href="/" target="_blank" rel="noopener"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-globe"/></svg>View the public site <svg class="icon" style="margin-left:auto;width:14px;height:14px" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-external"/></svg></a>
       <a class="nav-item" href="https://supabase.com/dashboard/project/qtvckhdkkkghoayfwcih/storage/buckets/concepts" target="_blank" rel="noopener"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-file"/></svg>Concepts bucket <svg class="icon" style="margin-left:auto;width:14px;height:14px" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-external"/></svg></a>
     </nav></div>
@@ -1013,6 +1026,21 @@
       </section>
 
       <!-- SETTINGS -->
+      <!-- PAGE SETTINGS -->
+      <section class="view" id="view-page" data-view="page" hidden>
+        <div class="page-head">
+          <div><h1>Page settings</h1><p>The words and images on the front of tcbconcepts.org. Leave a field empty and the page keeps the copy it was built with.</p></div>
+          <div class="head-actions">
+            <button class="btn btn-secondary" type="button" id="cmsReload"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-arrow"/></svg>Re-read the page</button>
+            <a class="btn btn-secondary" href="/" target="_blank" rel="noopener"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-globe"/></svg>View the page</a>
+            <button class="btn btn-primary" type="button" id="cmsSave"><svg class="icon" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-check"/></svg>Save and publish</button>
+          </div>
+        </div>
+        <div class="toolbar"><span class="muted" id="cmsCount"></span><input class="search-control" id="cmsSearch" type="search" placeholder="Find a field…" aria-label="Find a field"></div>
+        <div class="section-grid" id="cmsForm"></div>
+        <input type="file" id="cmsFile" accept="image/*" hidden>
+      </section>
+
       <section class="view" id="view-settings" data-view="settings" hidden>
         <div class="page-head"><div><h1>Workspace settings</h1><p>Who can sign in, and where things live.</p></div></div>
         <div class="section-grid">
