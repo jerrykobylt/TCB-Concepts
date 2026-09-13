@@ -176,8 +176,12 @@ a.proj:hover .open .arw{transform:translateX(4px)}
 .track ul li{position:relative;padding-left:24px;font-size:14.7px;color:var(--steel);line-height:1.5}
 .track ul li::before{content:"";position:absolute;left:0;top:7px;width:11px;height:11px;border-radius:50%;border:2px solid var(--green);opacity:.55}
 .track.alt ul li::before{border-color:var(--steel)}
+#included .tracks{grid-template-columns:repeat(3,minmax(0,1fr))}
 #included .track h3{margin-bottom:12px}
-#included .split{margin-top:22px;gap:22px}
+#included .track.wide{grid-column:1/-1}
+#included .track.wide .split{gap:34px}
+#included .track.wide p{color:var(--steel);font-size:15px}
+#included .shell>.split{margin-top:22px;gap:22px}
 #included .noteblock.choice{border-left-color:var(--green)}
 
 /* ---------- form ---------- */
@@ -248,6 +252,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 @media (max-width:900px){
   .split,.formwrap{grid-template-columns:1fr;gap:38px}
   .projects{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #included .tracks{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:820px){
   .bar nav a.hide-md{display:none}
@@ -267,6 +272,7 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
   .head{margin-bottom:28px}
   .fgrid{grid-template-columns:1fr}
   .projects{grid-template-columns:1fr}
+  #included .tracks{grid-template-columns:1fr}
   .totop{right:14px;bottom:14px;width:42px;height:42px}
   form{padding:22px 18px}
   .frow nav{margin-left:0;gap:16px}
@@ -490,6 +496,32 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
             <li>One local audience across Port Coquitlam, Port Moody, Coquitlam and Anmore</li>
             <li>On or off per item, switched by you, changed whenever you like</li>
           </ul>
+        </div>
+
+        <div class="track wide">
+          <h3>Tell people what is happening, without chasing them</h3>
+          <div class="split">
+            <div>
+              <p>
+                This is the leading edge of what a website can do for a local organization, and it
+                is the part groups your size are almost never offered. None of it is difficult any
+                more. It is just rarely put in the hands of a minor sports association.
+              </p>
+              <p>
+                Tell us which of these you want and we build it. The rule from everywhere else on
+                this page still holds: we send what you want sent, to the people you choose.
+                Nothing more, nothing less.
+              </p>
+            </div>
+            <ul>
+              <li>Automatic text reminders before games, practices and team meetings</li>
+              <li>Sent to management, parents, spectators, or only the people you pick</li>
+              <li>Push notifications through the Tri-Cities Board network</li>
+              <li>Automated email when a time changes or a game is called</li>
+              <li>Campaigns that build support and keep interested people up to date on your programs</li>
+              <li>Something we have not listed: ask, and usually we can build it</li>
+            </ul>
+          </div>
         </div>
 
       </div>
