@@ -445,7 +445,13 @@
     var r = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ url: url, slug: $('scanProject').value || null }) });
     var d = await r.json().catch(function () { return {}; });
     clearInterval(tick); $('scanGo').disabled = false; $('scanProgress').hidden = true;
-    if (!r.ok || !d.ok) { $('scanEmpty').hidden = false; toast(d.error || d.reason || 'Scan failed', 7000); return; }
+    // A bare "Scan failed" hides the useful case: no JSON body at all, which
+    // is what a function timeout or crash looks like from here. Show the code.
+    if (!r.ok || !d.ok) {
+      $('scanEmpty').hidden = false;
+      toast(d.error || d.reason || ('Scan failed \u2014 the server answered ' + r.status + ' with no detail.'), 9000);
+      return;
+    }
     var slug = $('scanProject').value;
     lastPitch = null;
 
@@ -457,7 +463,7 @@
       var pr = await fetch('/api/pitch', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ slug: slug, mode: 'pitch' }) });
       var pd = await pr.json().catch(function () { return {}; });
       $('scanProgress').hidden = true;
-      if (!pr.ok || !pd.ok) toast('Scan saved, but the pitch failed: ' + (pd.error || pd.reason || 'unknown'), 7000);
+      if (!pr.ok || !pd.ok) toast('Scan saved, but the pitch failed: ' + (pd.error || pd.reason || ('the server answered ' + pr.status)), 9000);
       else {
         var had = state.projects.find(function (x) { return x.slug === slug; });
         lastPitch = { slug: slug, text: pd.pitch, model: pd.model, saved: false };
