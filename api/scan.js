@@ -18,15 +18,62 @@ function env(name) {
 const UA = 'Mozilla/5.0 (compatible; TCBConceptsScan/1.0; +https://www.tcbconcepts.org)';
 const MAX_BYTES = 2_500_000;
 
-async function fetchText(url, ms) {
+/* We identify ourselves by default, which is the polite thing and lets an
+   operator recognise us in their logs. Some sites behind bot management
+   refuse a self-declared crawler outright: tcmbha.com answers 403 to the
+   string above from Vercel while serving the identical request fine from
+   elsewhere, so the refusal is about the declaration and the address, not the
+   request. When that happens we ask once more the way a browser would, since
+   this is a single operator-initiated read of one public home page, which is
+   what a person clicking the link would do anyway. */
+const HEADERS = {
+  bot: {
+    'User-Agent': UA,
+    Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+  },
+  browser: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-CA,en;q=0.9',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+  },
+};
+// Statuses that mean "not for bots" rather than "not there".
+const BLOCKED = [401, 403, 405, 406, 429, 451];
+
+async function fetchText(url, ms, mode) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms || 15000);
   const started = Date.now();
   try {
-    const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*;q=0.8' }, redirect: 'follow', signal: ctl.signal });
+    const r = await fetch(url, { headers: HEADERS[mode] || HEADERS.bot, redirect: 'follow', signal: ctl.signal });
     const buf = Buffer.from(await r.arrayBuffer());
-    return { ok: r.ok, status: r.status, url: r.url, headers: Object.fromEntries(r.headers.entries()), bytes: buf.length, text: buf.subarray(0, MAX_BYTES).toString('utf8'), ms: Date.now() - started };
+    return { ok: r.ok, status: r.status, url: r.url, headers: Object.fromEntries(r.headers.entries()), bytes: buf.length, text: buf.subarray(0, MAX_BYTES).toString('utf8'), ms: Date.now() - started, mode: mode || 'bot' };
   } finally { clearTimeout(t); }
+}
+
+/* Declared first, browser-like only if that was refused. Returns whichever
+   answered, plus how, so the report can say so. */
+async function fetchPage(url, ms) {
+  let first;
+  try {
+    first = await fetchText(url, ms, 'bot');
+    if (first.ok || !BLOCKED.includes(first.status)) return first;
+  } catch (e) {
+    first = { blockedBy: e };
+  }
+  try {
+    const second = await fetchText(url, ms, 'browser');
+    if (second.ok) return second;
+    return first.status ? first : second;
+  } catch (e) {
+    if (first && first.status) return first;
+    throw e;
+  }
 }
 
 const SIGNATURES = [
@@ -101,6 +148,7 @@ function measure(html, res, base) {
   const navItems = (h.match(/<nav\b[\s\S]*?<\/nav>/gi) || []).map(n => (n.match(/<a\b/gi) || []).length);
   return {
     finalUrl: res.url, status: res.status, responseMs: res.ms, htmlBytes: res.bytes, https: /^https:/i.test(res.url),
+    fetchedAs: res.mode || 'bot',
     server: res.headers['server'] || null, poweredBy: res.headers['x-powered-by'] || null, lastModified: res.headers['last-modified'] || null,
     title, titleLength: title.length, metaDescription: metaDesc ? metaDesc.slice(0, 200) : null, generator: generator || null,
     viewportMeta: /<meta[^>]+name=["']viewport["']/i.test(h),
@@ -169,18 +217,22 @@ module.exports = async function handler(req, res) {
 
   // 1. Read the site.
   let page;
-  try { page = await fetchText(target.href, 15000); }
+  try { page = await fetchPage(target.href, 15000); }
   catch (e) { return res.status(502).json({ ok: false, error: 'Could not reach that site: ' + (e && e.name === 'AbortError' ? 'timed out' : (e && e.message) || 'unknown error') }); }
-  if (!page.ok) return res.status(502).json({ ok: false, error: `The site answered ${page.status}.` });
+  if (!page.ok) {
+    return res.status(502).json({ ok: false, error: BLOCKED.includes(page.status)
+      ? `The site answered ${page.status}. It is behind bot protection that refuses this server even as a browser, so it cannot be scanned from here.`
+      : `The site answered ${page.status}.` });
+  }
   const signals = measure(page.text, page, target.href);
 
   // Cheap extras: robots and sitemap, best effort.
   try {
-    const rb = await fetchText(new URL('/robots.txt', page.url).href, 6000);
+    const rb = await fetchText(new URL('/robots.txt', page.url).href, 6000, page.mode);
     signals.robots = rb.ok ? { present: true, disallowAll: /disallow:\s*\/\s*$/im.test(rb.text), sitemapDeclared: /sitemap:/i.test(rb.text) } : { present: false };
   } catch { signals.robots = { present: false }; }
   try {
-    const sm = await fetchText(new URL('/sitemap.xml', page.url).href, 6000);
+    const sm = await fetchText(new URL('/sitemap.xml', page.url).href, 6000, page.mode);
     signals.sitemap = sm.ok && /<urlset|<sitemapindex/i.test(sm.text) ? { present: true, urls: (sm.text.match(/<loc>/gi) || []).length } : { present: false };
   } catch { signals.sitemap = { present: false }; }
 
