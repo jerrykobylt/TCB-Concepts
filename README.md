@@ -39,18 +39,23 @@ prospect sees their own site.
 ## Editing the front page
 
 The copy and images on `public/index.html` are editable from the admin, under
-**Page settings**, without a deploy. Every element carrying `data-cms="<key>"`
-(or `data-cms-src` on an image) becomes a field there: the admin reads the live
-page to build the form, so marking up a new bit of the page is one attribute
-here and nothing at all in the admin.
+**Page settings**, without a deploy. The page itself is the editor: it opens in
+a frame, and clicking any text edits it in place. Every element carrying
+`data-cms="<key>"` (or `data-cms-src` on an image) is editable, so marking up a
+new bit of the page is one attribute here and nothing at all in the admin.
 
-Overrides are saved as `site/content.json` in the `concepts` bucket, served by
-`/api/content`, and applied by a small inline script at the end of the page's
-head. A field left empty keeps whatever the HTML ships with, so the page always
-stands on its own if the bucket or the API is unreachable. Editors get plain
-text with `**bold**` as the only markup, escaped on the way in. Uploaded images
-land in `site/img/` in the same bucket and are served through
-`/concepts/site/img/...`, which is why the slug `site` is reserved.
+The page ships with a small script that applies overrides and listens for one
+message. Editing lives in `public/tcb-edit.js`, which is only fetched when the
+admin frame asks for it, so a visitor never downloads it. Edits are posted up
+to the admin, which holds the working copy; nothing is written until Save.
+
+Overrides are saved as `site/content.json` in the `concepts` bucket and served
+by `/api/content`. A field left alone keeps whatever the HTML ships with, so
+the page always stands on its own if the bucket or the API is unreachable.
+Text is escaped on the way in and `**bold**` is the only markup (ctrl-B while
+editing produces it). Uploaded images land in `site/img/` in the same bucket
+and are served through `/concepts/site/img/...`, which is why the slug `site`
+is reserved.
 
 ## Local preview
 

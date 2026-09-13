@@ -283,27 +283,58 @@ footer.site{background:var(--night-3);color:#9CA3AF;padding:40px 0;border-top:1p
 /* The copy and images on this page can be edited from the admin's Page
    settings. Overrides arrive as a small JSON of data-cms key to text, so
    anything nobody has touched keeps what is written below. Text is escaped on
-   the way in; **bold** is the only markup an editor gets. */
+   the way in; **bold** is the only markup an editor gets.
+
+   The admin also opens this page in a frame and edits it in place. All that
+   costs a visitor is the listener at the bottom: the editing itself lives in
+   /tcb-edit.js and is only ever fetched inside that frame. */
 (function () {
-  function apply(d) {
-    Object.keys(d).forEach(function (k) {
-      var v = d[k];
-      if (v == null || v === '') return;
-      var el = document.querySelector('[data-cms="' + k + '"]');
-      if (el) {
-        el.innerHTML = String(v).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; })
-          .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-        return;
-      }
-      var im = document.querySelector('[data-cms-src="' + k + '"]');
-      if (im) { im.removeAttribute('srcset'); im.setAttribute('src', v); }
+  var D = {};                                   // what the page shipped with
+  function esc(t) { return String(t).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+  function render(v) { return esc(v).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); }
+  function nodes() { return document.querySelectorAll('[data-cms],[data-cms-src]'); }
+  function keyOf(el) { return el.getAttribute('data-cms') || el.getAttribute('data-cms-src'); }
+  // Text as an editor would type it, with bold back in its ** form.
+  function read(el) {
+    var out = '';
+    Array.prototype.forEach.call(el.childNodes, function (n) {
+      if (n.nodeType === 3) out += n.nodeValue;
+      else if (n.nodeName === 'B' || n.nodeName === 'STRONG') out += '**' + n.textContent + '**';
+      else out += n.textContent;
+    });
+    return out.replace(/\s+/g, ' ').trim();
+  }
+  function snap() {
+    Array.prototype.forEach.call(nodes(), function (el) {
+      var k = keyOf(el);
+      if (!(k in D)) D[k] = el.hasAttribute('data-cms-src') ? el.getAttribute('src') : read(el);
     });
   }
-  fetch('/api/content').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-    if (!d || typeof d !== 'object') return;
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { apply(d); });
-    else apply(d);
-  }).catch(function () {});
+  function set(k, v) {
+    var el = document.querySelector('[data-cms="' + k + '"]');
+    if (el) { el.innerHTML = render(v || D[k] || ''); return true; }
+    var im = document.querySelector('[data-cms-src="' + k + '"]');
+    if (im) { im.removeAttribute('srcset'); im.setAttribute('src', v || D[k] || ''); return true; }
+    return false;
+  }
+  function apply(d) { Object.keys(d).forEach(function (k) { if (d[k]) set(k, d[k]); }); }
+  function applyAll(d) { Object.keys(D).forEach(function (k) { set(k, d[k] || ''); }); }
+
+  function boot(d) {
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', function () { boot(d); }); return; }
+    snap();
+    apply(d);
+  }
+  fetch('/api/content').then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { boot(d && typeof d === 'object' ? d : {}); })
+    .catch(function () { boot({}); });
+
+  window.__tcb = { D: D, read: read, keyOf: keyOf, nodes: nodes, set: set, applyAll: applyAll };
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || e.data.tcb !== 'edit' || window.__tcbEdit) return;
+    window.__tcbEdit = 1;
+    var s = document.createElement('script'); s.src = '/tcb-edit.js'; document.head.appendChild(s);
+  });
 })();
 </script>
 </head>

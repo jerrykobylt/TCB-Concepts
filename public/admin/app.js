@@ -490,101 +490,64 @@
 
 
   /* ---------- page settings ----------
-     The front page is the schema. Every [data-cms] on it becomes a field here,
-     so making a new bit of the page editable is one attribute in the HTML and
-     nothing at all in this file. Saved overrides live in the bucket next to
-     the concepts and are read back by /api/content. */
+     The front page itself is the editor: it opens in a frame, says which of
+     its elements are editable, and posts every change back here. This side
+     holds the working copy and is the only thing that writes, so the page in
+     the frame never needs to know about Supabase. */
   var CMS_PATH = 'site/content.json';
-  var CMS_GROUPS = { hero: 'Hero', work: 'The work', how: 'How it works', included: 'What you get', fit: 'Who we say yes to', cost: 'What it costs', ask: 'Ask us', board: 'The Board' };
   var CMS_WORDS = { eyebrow: 'Eyebrow', title: 'Heading', name: 'Heading', lede: 'Intro', body: 'Paragraph', li: 'Bullet', cta: 'Button', point: 'Point', check: 'Item', step: 'Step', card: 'Card', track: 'Option', note: 'Note', choice: 'Left block', goal: 'Right block', slot: 'Open slot', kind: 'Label', price: 'Price', flag: 'Flag', image: 'Image' };
-  var cms = { fields: [], values: {}, loaded: false, pick: '' };
+  var CMS_GROUPS = { hero: 'Hero', work: 'The work', how: 'How it works', included: 'What you get', fit: 'Who we say yes to', cost: 'What it costs', ask: 'Ask us', board: 'The Board' };
+  var cms = { values: {}, saved: {}, fields: [], ready: false, pick: '', loaded: false };
 
   function cmsLabel(key) {
-    var bits = key.split('.').slice(1);
-    if (!bits.length) return 'Text';
-    return bits.map(function (b) {
+    var bits = key.split('.'), where = CMS_GROUPS[bits[0]] || bits[0];
+    var what = bits.slice(1).map(function (b) {
       var m = b.match(/^([a-z]+)(\d+)$/), word = m ? m[1] : b, n = m ? ' ' + m[2] : '';
       return (CMS_WORDS[word] || word.charAt(0).toUpperCase() + word.slice(1)) + n;
     }).join(' · ');
+    return where + (what ? ' · ' + what : '');
   }
+  function cmsPost(type, data) {
+    var m = { tcb: type };
+    if (data) Object.keys(data).forEach(function (k) { m[k] = data[k]; });
+    try { $('cmsFrame').contentWindow.postMessage(m, location.origin); } catch (e) { /* frame not ready */ }
+  }
+  function cmsDirty() { return JSON.stringify(cms.values) !== JSON.stringify(cms.saved); }
 
   async function loadCms() {
-    $('cmsForm').innerHTML = '<p class="muted">Reading the front page…</p>';
-    try {
-      var html = await fetch('/?cms=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); });
-      var doc = new DOMParser().parseFromString(html, 'text/html');
-      cms.fields = $$('[data-cms],[data-cms-src]', doc).map(function (el) {
-        var img = el.hasAttribute('data-cms-src');
-        return { key: img ? el.getAttribute('data-cms-src') : el.getAttribute('data-cms'), img: img,
-                 def: img ? el.getAttribute('src') : el.textContent.replace(/\s+/g, ' ').trim() };
-      });
-      if (!cms.fields.length) throw new Error('nothing on the page is marked editable');
-      cms.values = await fetch('/api/content?t=' + Date.now(), { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }) || {};
-      cms.loaded = true;
-      renderCms();
-    } catch (e) {
-      $('cmsForm').innerHTML = '<p class="muted">Could not read the front page: ' + esc(e.message) + '</p>';
-    }
+    cms.loaded = true; cms.ready = false;
+    $('cmsCount').textContent = 'Opening the page…';
+    cms.saved = await fetch('/api/content?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }) || {};
+    cms.values = JSON.parse(JSON.stringify(cms.saved));
+    // Cache-busted, so the frame is always the page as it stands right now.
+    $('cmsFrame').src = '/?t=' + Date.now();
   }
 
-  function cmsField(f) {
-    var v = cms.values[f.key] || '';
-    var head = '<label>' + esc(cmsLabel(f.key)) + '<span class="mono key">' + esc(f.key) + '</span>'
-      + '<button class="rm" type="button" data-reset="' + esc(f.key) + '"' + (v ? '' : ' hidden') + '>Back to default</button></label>';
-    if (f.img) {
-      return '<div class="cms-field' + (v ? ' changed' : '') + '" data-find="' + esc((cmsLabel(f.key) + ' ' + f.key).toLowerCase()) + '">' + head
-        + '<div class="cms-img"><img src="' + esc(v || f.def) + '" alt="">'
-        + '<div><input type="text" data-key="' + esc(f.key) + '" value="' + esc(v) + '" placeholder="' + esc(f.def) + '">'
-        + '<button class="btn btn-secondary btn-small" type="button" data-pick="' + esc(f.key) + '">Upload an image…</button>'
-        + '</div></div></div>';
-    }
-    var big = f.def.length > 90;
-    return '<div class="cms-field' + (v ? ' changed' : '') + '" data-find="' + esc((cmsLabel(f.key) + ' ' + f.key + ' ' + f.def).toLowerCase()) + '">' + head
-      + (big ? '<textarea rows="' + Math.min(6, Math.ceil(f.def.length / 78) + 1) + '" data-key="' + esc(f.key) + '" placeholder="' + esc(f.def) + '">' + esc(v) + '</textarea>'
-             : '<input type="text" data-key="' + esc(f.key) + '" value="' + esc(v) + '" placeholder="' + esc(f.def) + '">')
-      + '</div>';
-  }
-
-  function renderCms() {
-    var groups = {};
-    cms.fields.forEach(function (f) { var g = f.key.split('.')[0]; (groups[g] = groups[g] || []).push(f); });
-    var known = Object.keys(CMS_GROUPS).filter(function (g) { return groups[g]; });
-    var rest = Object.keys(groups).filter(function (g) { return !CMS_GROUPS[g]; });
-    var changed = Object.keys(cms.values).filter(function (k) { return cms.values[k]; }).length;
-    $('cmsCount').textContent = cms.fields.length + ' fields · ' + (changed ? changed + ' changed from the built-in copy' : 'all showing the built-in copy');
-    $('cmsForm').innerHTML = known.concat(rest).map(function (g) {
-      return '<article class="card"><div class="card-head"><div><h2>' + esc(CMS_GROUPS[g] || g) + '</h2><p>'
-        + groups[g].length + ' field' + (groups[g].length === 1 ? '' : 's') + '</p></div></div><div class="card-body">'
-        + groups[g].map(cmsField).join('') + '</div></article>';
+  function renderCmsBar() {
+    var keys = Object.keys(cms.values).filter(function (k) { return cms.values[k]; });
+    $('cmsCount').textContent = !cms.ready ? 'Opening the page…'
+      : cms.fields.length + ' editable spots · ' + (keys.length ? keys.length + ' changed' : 'nothing changed yet');
+    $('cmsChanges').innerHTML = keys.map(function (k) {
+      return '<span class="cms-chip"><span data-show="' + esc(k) + '" title="Show me on the page">' + esc(cmsLabel(k)) + '</span>'
+        + '<button type="button" data-undo="' + esc(k) + '" aria-label="Put the original back">×</button></span>';
     }).join('');
-    cmsFilter();
-  }
-
-  // Find a field by its label, its key or the words currently on the page.
-  function cmsFilter() {
-    var q = ($('cmsSearch').value || '').trim().toLowerCase();
-    $$('#cmsForm .card').forEach(function (card) {
-      var shown = 0;
-      $$('.cms-field', card).forEach(function (f) {
-        var hit = !q || f.dataset.find.indexOf(q) > -1;
-        f.hidden = !hit; if (hit) shown++;
-      });
-      card.hidden = !shown;
-    });
+    $('cmsSave').disabled = !cmsDirty();
+    $('cmsDiscard').disabled = !cmsDirty();
   }
 
   async function saveCms() {
     var out = {};
-    $$('#cmsForm [data-key]').forEach(function (el) { var v = el.value.trim(); if (v) out[el.dataset.key] = v; });
-    var b = $('cmsSave'); b.disabled = true;
+    Object.keys(cms.values).forEach(function (k) { if (cms.values[k]) out[k] = cms.values[k]; });
+    $('cmsSave').disabled = true;
     var blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
     var r = await sb.storage.from(BUCKET).upload(CMS_PATH, blob, { upsert: true, contentType: 'application/json', cacheControl: '30' });
-    b.disabled = false;
-    if (r.error) { toast('Save failed: ' + r.error.message, 6000); return; }
-    cms.values = out; renderCms();
+    if (r.error) { $('cmsSave').disabled = false; toast('Save failed: ' + r.error.message, 6000); return; }
+    cms.saved = JSON.parse(JSON.stringify(out));
+    cms.values = JSON.parse(JSON.stringify(out));
+    renderCmsBar();
     var n = Object.keys(out).length;
-    toast(n ? n + ' change' + (n === 1 ? '' : 's') + ' published. The page picks them up within a minute.' : 'Every field is back to the built-in copy.', 5000);
+    toast(n ? n + ' change' + (n === 1 ? '' : 's') + ' published. The live page picks them up within a minute.' : 'Every word is back to the built-in copy.', 5000);
   }
 
   async function cmsUpload(key, file) {
@@ -593,39 +556,49 @@
     toast('Uploading ' + name + '…');
     var r = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: guessType(name), cacheControl: '3600' });
     if (r.error) { toast(r.error.message, 6000); return; }
-    var url = '/concepts/' + path;
-    var input = document.querySelector('#cmsForm [data-key="' + key + '"]');
-    if (input) {
-      input.value = url;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      var shot = input.closest('.cms-img') && input.closest('.cms-img').querySelector('img');
-      if (shot) shot.src = url;
-    }
-    toast('Uploaded. Save to publish it.', 4000);
+    cms.values[key] = '/concepts/' + path;
+    cmsPost('set', { key: key, value: cms.values[key] });
+    renderCmsBar();
+    toast('Swapped in. Publish when it looks right.', 4000);
   }
 
-  $('cmsForm').addEventListener('click', function (e) {
-    var r = e.target.closest('[data-reset]');
-    if (r) {
-      var input = document.querySelector('#cmsForm [data-key="' + r.dataset.reset + '"]');
-      if (input) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); }
-      return;
-    }
-    var p = e.target.closest('[data-pick]');
-    if (p) { cms.pick = p.dataset.pick; $('cmsFile').click(); }
+  $('cmsFrame').addEventListener('load', function () {
+    if (!/^https?:/.test(this.src)) return;
+    cmsPost('edit');
   });
-  $('cmsForm').addEventListener('input', function (e) {
-    var el = e.target.closest('[data-key]'); if (!el) return;
-    var field = el.closest('.cms-field'), on = !!el.value.trim();
-    field.classList.toggle('changed', on);
-    var btn = field.querySelector('[data-reset]'); if (btn) btn.hidden = !on;
-    var img = field.querySelector('.cms-img img');
-    if (img) img.src = el.value.trim() || el.placeholder;
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || !e.data.tcb) return;
+    var m = e.data;
+    if (m.tcb === 'fields') {
+      cms.fields = m.fields || []; cms.ready = true;
+      cmsPost('apply', { values: cms.values });   // the frame may have applied the saved copy first
+      renderCmsBar();
+    } else if (m.tcb === 'change') {
+      if (m.value) cms.values[m.key] = m.value; else delete cms.values[m.key];
+      renderCmsBar();
+    } else if (m.tcb === 'image') {
+      cms.pick = m.key; $('cmsFile').click();
+    }
+  });
+  $('cmsChanges').addEventListener('click', function (e) {
+    var u = e.target.closest('[data-undo]');
+    if (u) { delete cms.values[u.dataset.undo]; cmsPost('set', { key: u.dataset.undo, value: '' }); renderCmsBar(); return; }
+    var w = e.target.closest('[data-show]');
+    if (w) cmsPost('show', { key: w.dataset.show });
   });
   $('cmsFile').addEventListener('change', function () { if (this.files[0] && cms.pick) cmsUpload(cms.pick, this.files[0]); this.value = ''; });
-  $('cmsSearch').addEventListener('input', cmsFilter);
   $('cmsSave').addEventListener('click', saveCms);
-  $('cmsReload').addEventListener('click', function () { cms.loaded = false; loadCms(); });
+  $('cmsDiscard').addEventListener('click', function () {
+    cms.values = JSON.parse(JSON.stringify(cms.saved));
+    cmsPost('apply', { values: cms.values });
+    renderCmsBar();
+  });
+  $('cmsReload').addEventListener('click', function () { cms.ready = false; $('cmsFrame').src = '/?t=' + Date.now(); });
+  $('cmsWidth').addEventListener('click', function (e) {
+    var b = e.target.closest('.filter-tab'); if (!b) return;
+    $$('#cmsWidth .filter-tab').forEach(function (x) { x.classList.toggle('active', x === b); });
+    $('cmsFrame').style.width = b.dataset.w ? b.dataset.w + 'px' : '100%';
+  });
 
   /* ---------- AI: pitch and plan ---------- */
   async function callAI(mode) {
