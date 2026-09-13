@@ -307,8 +307,11 @@
     var rows = live.map(function (f) { return { rel: f.path.slice(f.path.indexOf('/') + 1), kb: f.size ? Math.round(f.size / 1024) : 0, path: f.path }; })
       .concat(pend.map(function (f) { return { rel: f._rel, kb: Math.round(f.size / 1024), staged: true }; }));
 
+    var nLive = rows.length - pend.length;
     $('fileList').innerHTML = rows.length
-      ? '<table class="data-table files">' + rows.map(function (f) {
+      ? '<div class="files-head"><span class="muted">' + (nLive ? nLive + ' published' : '') + (nLive && pend.length ? ' · ' : '') + (pend.length ? pend.length + ' waiting' : '') + '</span>'
+        + '<button class="rm" type="button" data-all="1">Remove all</button></div>'
+        + '<table class="data-table files">' + rows.map(function (f) {
           return '<tr' + (f.staged ? ' class="staged"' : '') + '><td><span class="mono">' + esc(f.rel) + '</span>' +
             (f.rel === 'index.html' ? ' ' + status('', 'page') : '') +
             (f.staged ? ' ' + status('amber', 'not published yet') : '') +
@@ -335,6 +338,24 @@
   $('fileList').addEventListener('click', async function (e) {
     var b = e.target.closest('.rm'); if (!b) return;
     if (b.dataset.drop) { state.pending = state.pending.filter(function (f) { return f._rel !== b.dataset.drop; }); renderPage(); return; }
+    if (b.dataset.all) {
+      var paths = live.map(function (f) { return f.path; }), waiting = (state.pending || []).length;
+      var what = [paths.length ? paths.length + ' published' : '', waiting ? waiting + ' waiting' : ''].filter(Boolean).join(' and ');
+      if (!what || !confirm('Remove ' + what + ' file' + (paths.length + waiting === 1 ? '' : 's') + ' from this concept? The project and its plan are kept.')) return;
+      state.pending = []; $('dropMsg').textContent = '';
+      if (!paths.length) { renderPage(); return; }
+      b.disabled = true; b.textContent = 'Removing…';
+      // Storage takes a list, but not an unbounded one.
+      for (var i = 0; i < paths.length; i += 100) {
+        var rr = await sb.storage.from(BUCKET).remove(paths.slice(i, i + 100));
+        if (rr.error) { toast(rr.error.message, 5000); loadFiles(state.proj.slug); return; }
+      }
+      // The page is gone, so the AI gate has to close behind it.
+      published[state.proj.slug] = false;
+      toast('Removed ' + paths.length + ' file' + (paths.length === 1 ? '' : 's') + '.');
+      loadFiles(state.proj.slug);
+      return;
+    }
     if (!confirm('Remove ' + b.dataset.path.split('/').slice(1).join('/') + ' from the site?')) return;
     var r = await sb.storage.from(BUCKET).remove([b.dataset.path]);
     if (r.error) { toast(r.error.message, 4000); return; }
