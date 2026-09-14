@@ -197,18 +197,43 @@
   var pushed = [];
   var baseScrollPad = null;
 
+  /* A concept page is whatever the client's designer built, so the bar cannot
+     guess by name which elements pin themselves to the top of the window: the
+     Inlet Rowing Club's logo lock sat on top of the bar because it is a plain
+     div, not something called a header or a nav. Everything is measured
+     instead. What each element asked for is remembered, so a strip that wanted
+     a 12px gap still gets 12px, now under the bar rather than under the top of
+     the window. */
+  function pinned() {
+    var found = [], all = document.body.getElementsByTagName('*');
+    var h = Math.ceil(bar.getBoundingClientRect().height);
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!el.closest || el.closest('.tcb-bar,.tcb-poll')) continue;
+      var cs = getComputedStyle(el);
+      if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+      var top = parseFloat(cs.top);
+      if (isNaN(top) || top >= h) continue;              // not pinned near the top
+      var box = el.getBoundingClientRect();
+      if (!box.width || box.height > window.innerHeight * 0.8) continue;  // a sheet, not a header
+      found.push(el);
+    }
+    // A pinned child inside a pinned parent travels with it; moving both doubles the gap.
+    return found.filter(function (el) {
+      for (var j = 0; j < found.length; j++) if (found[j] !== el && found[j].contains(el)) return false;
+      return true;
+    });
+  }
+
   function offset() {
     var h = Math.ceil(bar.getBoundingClientRect().height);
-    if (!pushed.length) {
-      var candidates = document.querySelectorAll('header, nav, [class*="head"], [class*="nav"], [class*="strip"], [class*="bar"]');
-      for (var i = 0; i < candidates.length; i++) {
-        var el = candidates[i];
-        if (el === bar || bar.contains(el)) continue;
-        var cs = getComputedStyle(el);
-        if ((cs.position === 'sticky' || cs.position === 'fixed') && parseInt(cs.top, 10) === 0) pushed.push(el);
-      }
-    }
-    for (var j = 0; j < pushed.length; j++) pushed[j].style.top = h + 'px';
+    // Re-scanned every time, because plenty of sites build their header in
+    // their own script and it may not exist yet the first time we look.
+    pinned().forEach(function (el) { if (pushed.indexOf(el) < 0) pushed.push(el); });
+    pushed.forEach(function (el) {
+      if (el._tcbTop === undefined) el._tcbTop = parseFloat(getComputedStyle(el).top) || 0;
+      el.style.top = (el._tcbTop + h) + 'px';
+    });
     if (baseScrollPad === null) baseScrollPad = parseInt(getComputedStyle(document.documentElement).scrollPaddingTop, 10) || 0;
     document.documentElement.style.scrollPaddingTop = (baseScrollPad + h) + 'px';
   }
@@ -446,6 +471,11 @@
     buildPoll();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(both);
     window.addEventListener('load', both);
+    // Sites that build their own header in script can finish after we do, so
+    // look again a moment later and once more when the page is first scrolled.
+    setTimeout(offset, 400);
+    setTimeout(offset, 1600);
+    window.addEventListener('scroll', function once() { window.removeEventListener('scroll', once); offset(); }, { passive: true });
     window.addEventListener('resize', function () { offset(); railReset(); sync(); });
     window.addEventListener('orientationchange', function () { offset(); railReset(); sync(); });
     // Bottom bars that only appear part way down the page are common, so
