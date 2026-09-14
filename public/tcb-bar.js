@@ -196,6 +196,31 @@
 
   var pushed = [];
   var baseScrollPad = null;
+  var basePad = null;
+  var anchored = false;
+
+  /* The bar sticks, which leaves the concept's own layout alone. But a page
+     that hides horizontal overflow on both html and body makes the body a
+     scroll container, and a sticky child of one scrolls away with the page:
+     the bar simply vanishes. That CSS is common enough in client work to be
+     worth handling, so in that one case the bar is fixed instead and the body
+     carries its height as padding. Decided once, from the stylesheets the page
+     loaded, so a menu that hides overflow while it is open cannot move it. */
+  function anchor() {
+    if (anchored) return;
+    anchored = true;
+    if (getComputedStyle(document.documentElement).overflowX === 'visible') return;
+    if (getComputedStyle(document.body).overflowX === 'visible') return;
+    bar.style.position = 'fixed';
+    bar.style.left = '0';
+    bar.style.right = '0';
+    basePad = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+    pad();
+  }
+  function pad() {
+    if (basePad === null) return;
+    document.body.style.paddingTop = (basePad + Math.ceil(bar.getBoundingClientRect().height)) + 'px';
+  }
 
   /* A concept page is whatever the client's designer built, so the bar cannot
      guess by name which elements pin themselves to the top of the window: the
@@ -215,7 +240,10 @@
       var top = parseFloat(cs.top);
       if (isNaN(top) || top >= h) continue;              // not pinned near the top
       var box = el.getBoundingClientRect();
-      if (!box.width || box.height > window.innerHeight * 0.8) continue;  // a sheet, not a header
+      if (!box.width) continue;
+      // A sheet covers the window both ways. A full-height side rail is tall and
+      // narrow, and its top belongs under the bar like anything else.
+      if (box.height > window.innerHeight * 0.8 && box.width > window.innerWidth * 0.8) continue;
       found.push(el);
     }
     // A pinned child inside a pinned parent travels with it; moving both doubles the gap.
@@ -226,6 +254,7 @@
   }
 
   function offset() {
+    pad();
     var h = Math.ceil(bar.getBoundingClientRect().height);
     // Re-scanned every time, because plenty of sites build their header in
     // their own script and it may not exist yet the first time we look.
@@ -467,6 +496,7 @@
   function mount() {
     analytics();
     document.body.insertBefore(bar, document.body.firstChild);
+    anchor();
     offset();
     buildPoll();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(both);
@@ -475,7 +505,16 @@
     // look again a moment later and once more when the page is first scrolled.
     setTimeout(offset, 400);
     setTimeout(offset, 1600);
-    window.addEventListener('scroll', function once() { window.removeEventListener('scroll', once); offset(); }, { passive: true });
+    /* Plenty of sites pin their header only once the visitor is a few hundred
+       pixels down, which is long after the first scroll event. Keep looking for
+       a while, throttled, then stop: by then anything that pins on scroll has. */
+    var scans = 0, scanned = 0;
+    window.addEventListener('scroll', function () {
+      if (scans >= 24) return;
+      var now = Date.now();
+      if (now - scanned < 350) return;
+      scanned = now; scans++; offset();
+    }, { passive: true });
     window.addEventListener('resize', function () { offset(); railReset(); sync(); });
     window.addEventListener('orientationchange', function () { offset(); railReset(); sync(); });
     // Bottom bars that only appear part way down the page are common, so
